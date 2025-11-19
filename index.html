@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Swing Demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <h1>Swing Demo</h1>
+
+  <div class="feed">
+    <div class="video-item">
+      <video src="videos/flower.mp4" muted autoplay loop playsinline></video>
+      <div class="overlay">
+        <div class="user">@naturelover</div>
+        <div class="desc">Beautiful flowers bloom 🌸</div>
+      </div>
+      <div class="controls">
+        <div class="like">❤️ <span class="count">0</span></div>
+        <div class="comment">💬</div>
+      </div>
+      <div class="comment-box">
+        <div class="list"></div>
+        <input type="text" placeholder="Write comment and press Enter">
+      </div>
+    </div>
+
+    <div class="video-item">
+      <video src="videos/city.mp4" muted autoplay loop playsinline></video>
+      <div class="overlay">
+        <div class="user">@cityvibes</div>
+        <div class="desc">City lights at night 🌃</div>
+      </div>
+      <div class="controls">
+        <div class="like">❤️ <span class="count">0</span></div>
+        <div class="comment">💬</div>
+      </div>
+      <div class="comment-box">
+        <div class="list"></div>
+        <input type="text" placeholder="Write comment and press Enter">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
