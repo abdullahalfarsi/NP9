@@ -235,15 +235,32 @@ body.ro .w-only{display:none!important}
   .hbar{grid-template-columns:90px 1fr 28px}
 }
 @media (max-width:520px){.g4{grid-template-columns:1fr}}
-.login{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px;
+.login{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto;
   background-image:radial-gradient(700px 400px at 50% 0%,#c8862a30,transparent 70%)}
 .login.show{display:flex}
-.login form{width:100%;max-width:380px;text-align:center;background:linear-gradient(180deg,#1a120a,#120c07);border:1px solid #5a3f17;border-radius:20px;padding:30px 26px;box-shadow:0 30px 80px #000}
-.login img{width:120px;height:120px;border-radius:50%;box-shadow:0 0 0 3px #d4a24c55,0 0 50px #d4a24c50;margin-bottom:14px}
+#gate{width:100%;max-width:400px;text-align:center;background:linear-gradient(180deg,#1a120a,#120c07);border:1px solid #5a3f17;border-radius:20px;padding:30px 26px;box-shadow:0 30px 80px #000}
+#gate:has(form.wide){max-width:560px}
+.login img{width:116px;height:116px;border-radius:50%;box-shadow:0 0 0 3px #d4a24c55,0 0 50px #d4a24c50;margin-bottom:14px}
 .login h1{font-size:22px;font-weight:900;color:var(--gold2)}
 .login .inp{width:100%;margin-top:12px;text-align:right}
 .login .btn{width:100%;justify-content:center;margin-top:18px;padding:12px}
-#loginErr{color:var(--red);font-size:13px;min-height:20px;margin-top:8px}
+.login .code{text-align:center!important;font-size:28px;letter-spacing:10px;font-family:ui-monospace,Consolas,monospace;direction:ltr;padding:12px}
+.gtxt{margin-top:16px;color:var(--text);font-size:14.5px;line-height:1.9}
+.gerr{color:#ff9a92;font-size:13.5px;min-height:20px;margin-top:10px;font-weight:600}
+.glinks{display:flex;justify-content:space-between;gap:10px;margin-top:14px;font-size:13px;align-items:center}
+.lnk{background:none;border:0;color:var(--gold2);cursor:pointer;font-weight:700;font-family:Cairo;padding:4px}
+.lnk:disabled{color:var(--dim);cursor:default}
+.gform{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;text-align:right;margin-top:8px}
+.gform label{font-size:13px;font-weight:700;color:var(--muted);font-family:Cairo;margin-top:8px}
+.gform label .inp{margin-top:6px;font-weight:400;color:var(--text);font-family:Tajawal}
+.gform .full{grid-column:1/-1}.gform i{color:var(--red);font-style:normal}
+.pend-ic{width:70px;height:70px;margin:18px auto 0;border-radius:50%;display:grid;place-items:center;background:#d4a24c18;color:var(--gold)}
+.pend-ic svg{width:36px;height:36px}
+body.insp .a-only{display:none!important}
+#meBox{padding:4px 0}
+#meBox .av{width:32px;height:32px;font-size:13px}
+#meBox b{font-size:13.5px;color:var(--text)}
+@media (max-width:600px){.gform{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -260,6 +277,7 @@ body.ro .w-only{display:none!important}
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
       <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">جاري الاتصال…</span></div>
+      <div id="meBox"></div>
       <div id="supName"></div>
       <button class="btn sm" id="logoutBtn" style="display:none" onclick="doLogout()">تسجيل الخروج</button>
     </div>
@@ -273,7 +291,7 @@ body.ro .w-only{display:none!important}
       </div>
       <div class="sp"></div>
       <div class="flex w-only">
-        <button class="btn" onclick="formWarning()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>إنذار</span></button>
+        <button class="btn a-only" onclick="formWarning()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>إنذار</span></button>
         <button class="btn gold" onclick="formWork()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg><span>تسجيل عمل</span></button>
       </div>
     </header>
@@ -285,15 +303,7 @@ body.ro .w-only{display:none!important}
 </div>
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast-wrap" id="toasts"></div>
-<div class="login" id="login"><form onsubmit="doLogin(event)">
-  <img src="data:image/webp;base64,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" alt="NP9">
-  <h1>NP9 | مود الشرطة</h1>
-  <div class="muted">نظام إدارة الرقابة والتفتيش</div>
-  <input class="inp" name="email" type="email" placeholder="البريد الإلكتروني" required style="direction:ltr">
-  <input class="inp" name="password" type="password" placeholder="كلمة المرور" required style="direction:ltr">
-  <button class="btn gold" type="submit">تسجيل الدخول</button>
-  <div id="loginErr"></div>
-</form></div>
+<div class="login" id="login"><div id="gate"></div></div>
 
 <script>
 const LOGO=document.querySelector('.brand img').src;
@@ -324,7 +334,7 @@ const I={
 const ic=(n,w=2)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
 
 /* ============ constants ============ */
-const STATUS={active:['نشط','c-green'],leave:['في إجازة','c-blue'],suspended:['موقوف','c-amber'],dismissed:['مفصول','c-red']};
+const STATUS={active:['نشط','c-green'],leave:['في إجازة','c-blue'],suspended:['موقوف','c-amber'],dismissed:['مفصول','c-red'],pending:['بانتظار الموافقة','c-violet']};
 const WSTAT={approved:['معتمد','c-green'],pending:['قيد المراجعة','c-amber'],rejected:['مرفوض','c-red']};
 const WLEVEL={verbal:['تنبيه شفهي','c-gray',2],w1:['إنذار أول','c-amber',5],w2:['إنذار ثاني','c-red',10],final:['إنذار نهائي','c-red',20],suspend:['إيقاف مؤقت','c-violet',30]};
 const WARNST={active:['فعّال','c-red'],expired:['منتهي','c-gray'],cancelled:['ملغى','c-blue']};
@@ -342,8 +352,10 @@ const COLS=['members','works','warnings','leaves'];
 /* ضع بيانات مشروعك من Supabase → Project Settings → API */
 const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';       
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  
-const S={members:{},works:{},warnings:{},leaves:{},cfg:structuredClone(DEFAULT_CFG)};
-let SB=null,MODE='loading',READONLY=false;
+const S={members:{},works:{},warnings:{},leaves:{},cfg:structuredClone(DEFAULT_CFG),board:null,boardKey:''};
+let SB=null,MODE='loading',READONLY=false,RT=null,pendTimer=null;
+let ME={role:'admin',memberId:null,userId:null,email:''};
+const isAdmin=()=>ME.role==='admin';
 const LSK='np9-rqaba-v1';
 function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg};}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LSK,JSON.stringify({members:S.members,works:S.works,warnings:S.warnings,leaves:S.leaves,cfg:S.cfg}))}catch(e){}}
@@ -354,57 +366,161 @@ function toRow(id,o){const r={id};for(const[k,v]of Object.entries(o)){if(k==='id
 function fromRow(r){const o={};for(const[k,v]of Object.entries(r)){if(k==='id'||v===null)continue;o[toCamel(k)]=v}return o}
 
 async function put(col,id,obj){
+  const existed=!!S[col][id];
   S[col][id]=obj; render();
-  if(MODE==='cloud'){const {error}=await SB.from(col).upsert(toRow(id,obj));if(error)handleWriteErr(error)}else lsSave();
+  if(MODE==='cloud'){
+    const row=toRow(id,obj);
+    const {error}=existed?await SB.from(col).update(row).eq('id',id):await SB.from(col).insert(row);
+    if(error){handleWriteErr(error);await loadTable(col);render()}
+  }else lsSave();
 }
 async function del(col,id){
   delete S[col][id]; render();
-  if(MODE==='cloud'){const {error}=await SB.from(col).delete().eq('id',id);if(error)handleWriteErr(error)}else lsSave();
+  if(MODE==='cloud'){const {error}=await SB.from(col).delete().eq('id',id);if(error){handleWriteErr(error);await loadTable(col);render()}}else lsSave();
 }
 async function saveCfg(){
   render();
   if(MODE==='cloud'){const {error}=await SB.from('config').upsert({id:'main',data:S.cfg});if(error)handleWriteErr(error)}else lsSave();
 }
 function handleWriteErr(e){console.error(e);toast('تعذّر الحفظ: '+(e.message||'خطأ غير معروف'),true)}
-function setConn(m){
+function setConn(m,txt){
   MODE=m;const d=$('#connDot'),t=$('#connTxt');
   d.className='dot '+(m==='cloud'?'ok':m==='local'?'local':'');
-  t.textContent=m==='cloud'?'متصل بـ Supabase':m==='local'?'وضع محلي — الحفظ على هذا المتصفح':'جاري الاتصال…';
-  $('#logoutBtn').style.display=m==='cloud'?'':'none';
+  t.textContent=txt||(m==='cloud'?'متصل بـ Supabase':m==='local'?'وضع محلي — الحفظ على هذا المتصفح':'جاري الاتصال…');
+  $('#logoutBtn').style.display=m==='cloud'&&ME.userId?'':'none';
 }
 async function loadTable(c){
   const {data,error}=await SB.from(c).select('*');
-  if(error){toast('خطأ في تحميل '+c+': '+error.message,true);return}
+  if(error){toast('خطأ في التحميل: '+error.message,true);return}
   const m={};data.forEach(r=>m[r.id]=fromRow(r));S[c]=m;
+  if(c==='members'&&ME.memberId){const me=S.members[ME.memberId];
+    if(me&&(me.role||'inspector')!==ME.role)location.reload();
+    if(!me||me.status==='dismissed'||me.status==='pending')resolveMe();}
 }
 async function loadCfg(){
   const {data}=await SB.from('config').select('data').eq('id','main').maybeSingle();
   S.cfg=data&&data.data?{...DEFAULT_CFG,...data.data}:structuredClone(DEFAULT_CFG);
 }
-let rtTimers={};
-function startCloud(){
-  setConn('cloud');$('#login').classList.remove('show');
-  Promise.all([...COLS.map(loadTable),loadCfg()]).then(render);
-  SB.channel('np9-live')
-    .on('postgres_changes',{event:'*',schema:'public'},p=>{
-      const t=p.table;clearTimeout(rtTimers[t]);
-      rtTimers[t]=setTimeout(()=>(t==='config'?loadCfg():loadTable(t)).then(render),300);
-    }).subscribe();
+let boardBusy=false;
+async function loadBoard(){
+  if(MODE!=='cloud'||boardBusy)return;boardBusy=true;
+  const key=F.kp,[f0,f1]=periodRange(key);
+  const {data,error}=await SB.rpc('leaderboard',{p_from:f0||null,p_to:f1||null});
+  boardBusy=false;if(!error){S.board=data||[];S.boardKey=key;render()}
+}
+
+/* ---------- بوابة الدخول ---------- */
+let gateEmail='',resendT=0,resendTimer=null;
+function gate(html){$('#gate').innerHTML=html;$('#login').classList.add('show')}
+function hideGate(){$('#login').classList.remove('show')}
+const gateHead=sub=>`<img src="${LOGO}" alt="NP9"><h1>NP9 | مود الشرطة</h1><div class="muted">${sub}</div>`;
+const gateOut=`<div class="glinks"><button type="button" class="lnk" onclick="doLogout()">تسجيل الخروج</button></div>`;
+function gateEmailStep(){
+  gate(`<form onsubmit="sendCode(event)">${gateHead('نظام إدارة الرقابة والتفتيش')}
+   <p class="gtxt">اكتب إيميلك وبيوصلك رمز تأكيد للدخول</p>
+   <input class="inp" name="email" type="email" required placeholder="example@gmail.com" style="direction:ltr;text-align:left" value="${esc(gateEmail)}">
+   <button class="btn gold" type="submit">إرسال رمز التأكيد</button><div class="gerr" id="gerr"></div></form>`);
+  setTimeout(()=>$('#gate input')?.focus(),50);
+}
+function otpErr(e){const m=(e.message||'').toLowerCase();
+  if(e.status===429||m.includes('rate')||m.includes('seconds'))return 'طلبت رمز قبل قليل، انتظر شوي وحاول مرة ثانية';
+  if(m.includes('not authorized')||m.includes('address not'))return 'تعذّر الإرسال لهذا الإيميل — لازم إعداد SMTP في Supabase';
+  if(m.includes('signups not allowed')||m.includes('signup'))return 'التسجيل مقفل حالياً من الإدارة';
+  if(m.includes('invalid'))return 'الإيميل غير صحيح';
+  return 'تعذّر إرسال الرمز: '+e.message}
+async function sendCode(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button');gateEmail=f.email.value.trim().toLowerCase();
+  b.disabled=true;b.textContent='جاري الإرسال…';$('#gerr').textContent='';
+  const {error}=await SB.auth.signInWithOtp({email:gateEmail,options:{shouldCreateUser:true}});
+  if(error){b.disabled=false;b.textContent='إرسال رمز التأكيد';$('#gerr').textContent=otpErr(error);return}
+  gateCodeStep();
+}
+function gateCodeStep(){
+  gate(`<form onsubmit="verifyCode(event)">${gateHead('تأكيد الإيميل')}
+   <p class="gtxt">أرسلنا رمز التأكيد إلى<br><b style="direction:ltr;display:inline-block;color:var(--gold2)">${esc(gateEmail)}</b><br><small class="dim">تأكد من مجلد الرسائل غير المرغوب (Spam)</small></p>
+   <input class="inp code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required placeholder="------">
+   <button class="btn gold" type="submit">تأكيد ودخول</button><div class="gerr" id="gerr"></div>
+   <div class="glinks"><button type="button" class="lnk" id="resendBtn" onclick="resendCode()"></button><button type="button" class="lnk" onclick="gateEmailStep()">تغيير الإيميل</button></div></form>`);
+  startResend();setTimeout(()=>$('#gate .code')?.focus(),50);
+}
+function startResend(){resendT=60;clearInterval(resendTimer);const tick=()=>{const b=$('#resendBtn');if(!b){clearInterval(resendTimer);return}
+  b.disabled=resendT>0;b.textContent=resendT>0?`إعادة الإرسال بعد ${resendT} ث`:'إعادة إرسال الرمز';if(resendT<=0)clearInterval(resendTimer);resendT--};tick();resendTimer=setInterval(tick,1000)}
+async function resendCode(){const {error}=await SB.auth.signInWithOtp({email:gateEmail,options:{shouldCreateUser:true}});
+  if(error){$('#gerr').textContent=otpErr(error);return}toast('تم إرسال رمز جديد');startResend()}
+async function verifyCode(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');const token=f.code.value.replace(/\D/g,'');
+  if(token.length<6){$('#gerr').textContent='اكتب الرمز كامل';return}
+  b.disabled=true;b.textContent='جاري التحقق…';$('#gerr').textContent='';
+  const {data,error}=await SB.auth.verifyOtp({email:gateEmail,token,type:'email'});
+  if(error||!data.session){b.disabled=false;b.textContent='تأكيد ودخول';$('#gerr').textContent=/rate|seconds/i.test(error?.message||'')?'محاولات كثيرة، انتظر شوي وحاول':'الرمز غير صحيح أو انتهت صلاحيته — تأكد منه أو اطلب رمز جديد';return}
+  afterAuth(data.session);
+}
+async function afterAuth(session){
+  ME.userId=session.user.id;ME.email=session.user.email||'';
+  setConn('cloud','جاري التحميل…');await loadCfg();await resolveMe();
+}
+async function resolveMe(){
+  const {data,error}=await SB.from('members').select('*').eq('user_id',ME.userId).maybeSingle();
+  if(error){gate(`${gateHead('حدث خطأ')}<p class="gerr">${esc(error.message)}</p>${gateOut}`);return}
+  if(!data){gateProfileStep();return}
+  const m=fromRow(data);ME.memberId=data.id;ME.role=m.role||'inspector';S.members[data.id]=m;
+  if(m.status==='pending'){gatePending(m);return}
+  if(m.status==='dismissed'){clearInterval(pendTimer);gate(`${gateHead('تم إيقاف الوصول')}<p class="gtxt">حسابك غير مفعّل في فريق الرقابة والتفتيش. تواصل مع المسؤول.</p>${gateOut}`);return}
+  clearInterval(pendTimer);hideGate();enterApp();
+}
+function gateProfileStep(){
+  const ranks=S.cfg.ranks;
+  gate(`<form onsubmit="saveProfile(event)" class="wide">${gateHead('أكمل بياناتك الرقابية')}
+   <p class="gtxt">تم تأكيد إيميلك ✓ — سجّل بياناتك عشان ينضاف ملفك لفريق الرقابة والتفتيش</p>
+   <div class="gform">
+    <label>الاسم في السيرفر <i>*</i><input class="inp" name="name" required placeholder="اسمك في الرول بلاي"></label>
+    <label>يوزر / آيدي ديسكورد <i>*</i><input class="inp" name="discordId" required placeholder="username أو ID" style="direction:ltr;text-align:right"></label>
+    <label>الرقم الوظيفي<input class="inp" name="badge" placeholder="إن وجد"></label>
+    <label>الرتبة الحالية<select class="inp" name="rank">${ranks.map((r,i)=>`<option ${i===ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
+    <label class="full">نبذة / ملاحظات<textarea class="inp" name="notes" placeholder="خبرتك، أوقات تواجدك…"></textarea></label>
+   </div>
+   <button class="btn gold" type="submit">حفظ وإرسال</button><div class="gerr" id="gerr"></div>
+   <div class="glinks"><span class="dim" style="direction:ltr">${esc(ME.email)}</span><button type="button" class="lnk" onclick="doLogout()">تسجيل الخروج</button></div></form>`);
+}
+async function saveProfile(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');const o=Object.fromEntries(new FormData(f));
+  if(!o.name.trim()||!o.discordId.trim())return;b.disabled=true;b.textContent='جاري الحفظ…';
+  const row=toRow(uid(),{...o,name:o.name.trim(),discordId:o.discordId.trim(),joined:today(),createdAt:Date.now()});
+  const {error}=await SB.from('members').insert(row);
+  if(error){b.disabled=false;b.textContent='حفظ وإرسال';$('#gerr').textContent='تعذّر الحفظ: '+error.message;return}
+  resolveMe();
+}
+function gatePending(m){
+  gate(`${gateHead('طلبك قيد المراجعة')}
+   <div class="pend-ic">${ic('clock',1.6)}</div>
+   <p class="gtxt">تم استلام بياناتك يا <b>${esc(m.name)}</b> ✓<br>بانتظار موافقة مسؤول الرقابة والتفتيش على انضمامك.<br><small class="dim">هذي الصفحة تتحدث تلقائياً أول ما ينقبل طلبك.</small></p>
+   <button class="btn" type="button" onclick="resolveMe()">تحديث</button>${gateOut}`);
+  clearInterval(pendTimer);pendTimer=setInterval(resolveMe,15000);
+}
+let appStarted=false;
+function enterApp(){
+  document.body.classList.toggle('insp',!isAdmin());
+  const m=S.members[ME.memberId]||{};
+  $('#meBox').innerHTML=`<div class="person"><div class="av">${esc(initials(m.name))}</div><div style="min-width:0"><b>${esc(m.name||'')}</b><small>${isAdmin()?'مسؤول النظام':esc(m.rank||'مفتش')}</small></div></div>`;
+  setConn('cloud');
+  if(!isAdmin()&&!['me','works','warnings','leaves','ranking','profile'].includes(page))location.hash='me';
+  route();
+  Promise.all([...COLS.map(loadTable),loadCfg()]).then(()=>{render();loadBoard()});
+  if(appStarted)return;appStarted=true;
+  const timers={};
+  RT=SB.channel('np9-live').on('postgres_changes',{event:'*',schema:'public'},p=>{
+    const t=p.table;clearTimeout(timers[t]);
+    timers[t]=setTimeout(async()=>{await(t==='config'?loadCfg():loadTable(t));render();if(t!=='config'&&t!=='members')loadBoard()},400);
+  }).subscribe();
 }
 async function boot(){
-  if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){lsLoad();setConn('local');render();return}
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){lsLoad();ME.role='admin';setConn('local');render();return}
   SB=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  setConn('loading','بانتظار تسجيل الدخول');
   const {data:{session}}=await SB.auth.getSession();
-  if(session)startCloud();else{setConn('loading');$('#connTxt').textContent='بانتظار تسجيل الدخول';$('#login').classList.add('show')}
+  if(session)afterAuth(session);else gateEmailStep();
 }
-async function doLogin(e){
-  e.preventDefault();const f=e.target,b=f.querySelector('button');b.disabled=true;$('#loginErr').textContent='';
-  const {error}=await SB.auth.signInWithPassword({email:f.email.value.trim(),password:f.password.value});
-  b.disabled=false;
-  if(error){$('#loginErr').textContent='بيانات الدخول غير صحيحة';return}
-  startCloud();
-}
-async function doLogout(){if(SB){await SB.auth.signOut();location.reload()}}
+async function doLogout(){if(SB){await SB.auth.signOut();location.hash='';location.reload()}}
 
 /* ============ helpers ============ */
 function $(s){return document.querySelector(s)}
@@ -420,9 +536,11 @@ const ago=ts=>{const s=(Date.now()-ts)/1000;if(s<60)return 'الآن';if(s<3600)
 const chip=([t,c])=>`<span class="chip ${c}">${esc(t)}</span>`;
 const initials=n=>{const p=String(n||'?').trim().split(/\s+/);return (p[0]?.[0]||'?')+(p[1]?.[0]||'')};
 const arr=c=>Object.entries(S[c]).map(([id,v])=>({id,...v}));
+const team=()=>arr('members').filter(m=>m.status!=='pending');
 const mem=id=>S.members[id];
 const mName=id=>mem(id)?.name||'عضو محذوف';
-function person(id,sub){const m=mem(id);return `<div class="person"><div class="av">${esc(initials(m?.name))}</div><div style="min-width:0"><b>${esc(m?.name||'عضو محذوف')}</b><small>${esc(sub??(m?.rank||''))}</small></div></div>`}
+function person(id,sub){return personM(mem(id),sub)}
+function personM(m,sub){return `<div class="person"><div class="av">${esc(initials(m?.name))}</div><div style="min-width:0"><b>${esc(m?.name||'عضو محذوف')}</b><small>${esc(sub??(m?.rank||''))}</small></div></div>`}
 function toast(t,err){const e=document.createElement('div');e.className='toast'+(err?' err':'');e.textContent=t;$('#toasts').appendChild(e);setTimeout(()=>e.remove(),3200)}
 function canW(){if(READONLY){toast('وضع العرض فقط',true);return false}return true}
 const typePts=n=>(S.cfg.workTypes.find(t=>t.n===n)||{}).p??5;
@@ -444,18 +562,20 @@ function statsFor(mid,from,to){
 }
 
 /* ============ navigation ============ */
-const PAGES=[
+const PAGES_ADMIN=[
  ['dashboard','لوحة القيادة','dash'],['members','الأعضاء','users'],['works','سجل الأعمال','work'],
  ['warnings','الإنذارات','warn'],['leaves','الإجازات والغياب','leave'],['ranking','الترتيب والتقييم','trophy'],
  ['reports','التقارير','report'],['settings','الإعدادات','gear']];
+const PAGES_INSP=[['me','لوحتي','dash'],['works','أعمالي','work'],['warnings','إنذاراتي','warn'],['leaves','إجازاتي','leave'],['ranking','الترتيب','trophy'],['profile','ملفي','user']];
+const PAGES=()=>isAdmin()?PAGES_ADMIN:PAGES_INSP;
 let page='dashboard';
-function route(){const h=location.hash.slice(1);page=PAGES.some(p=>p[0]===h)?h:'dashboard';document.body.classList.remove('nav-open');render();window.scrollTo(0,0)}
+function route(){const h=location.hash.slice(1);page=PAGES().some(p=>p[0]===h)?h:PAGES()[0][0];document.body.classList.remove('nav-open');render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 function renderNav(){
   const pend=arr('works').filter(w=>w.status==='pending').length;
   const aw=arr('warnings').filter(warnActive).length;
-  $('#nav').innerHTML=PAGES.map(([k,t,i])=>{
-    let b='';if(k==='works'&&pend)b=`<span class="badge">${pend}</span>`;if(k==='warnings'&&aw)b=`<span class="badge">${aw}</span>`;
+  $('#nav').innerHTML=PAGES().map(([k,t,i])=>{
+    const pm=isAdmin()?arr('members').filter(m=>m.status==='pending').length:0;let b='';if(k==='members'&&pm)b=`<span class="badge">${pm}</span>`;if(k==='works'&&pend)b=`<span class="badge">${pend}</span>`;if(k==='warnings'&&aw)b=`<span class="badge">${aw}</span>`;
     return `<a href="#${k}" class="${page===k?'on':''}">${ic(i)}<span>${t}</span>${b}</a>`}).join('');
 }
 
@@ -469,16 +589,16 @@ let focusKeep=null;
 function render(keepFocus){
   const a=document.activeElement;focusKeep=keepFocus&&a&&a.id?{id:a.id,pos:a.selectionStart}:null;
   renderNav();
-  const P=PAGES.find(p=>p[0]===page);$('#title').textContent=P[1];
+  const P=PAGES().find(p=>p[0]===page)||PAGES()[0];$('#title').textContent=P[1];
   $('#supName').textContent=S.cfg.supervisor?'المسؤول: '+S.cfg.supervisor:'';
   const v=$('#view');
-  v.innerHTML=({dashboard:vDash,members:vMembers,works:vWorks,warnings:vWarnings,leaves:vLeaves,ranking:vRanking,reports:vReports,settings:vSettings})[page]();
+  v.innerHTML=({me:vMe,profile:vProfile,dashboard:vDash,members:vMembers,works:vWorks,warnings:vWarnings,leaves:vLeaves,ranking:vRanking,reports:vReports,settings:vSettings})[page]();
   if(focusKeep){const e=document.getElementById(focusKeep.id);if(e){e.focus();try{e.setSelectionRange(focusKeep.pos,focusKeep.pos)}catch(_){}}}
 }
 
 /* ---- dashboard ---- */
 function vDash(){
-  const M=arr('members'),W=arr('works'),X=arr('warnings'),t=today();
+  const M=team(),W=arr('works'),X=arr('warnings'),t=today();const PM=arr('members').filter(m=>m.status==='pending');
   if(!M.length) return `<div class="card empty" style="padding:60px 20px"><img src="${LOGO}" alt=""><div class="big">أهلاً بك في نظام الرقابة والتفتيش</div><p class="mb">ابدأ بإضافة أعضاء فريق الرقابة، ثم سجّل أعمالهم وإنذاراتهم وتابع أداءهم من هنا.</p><button class="btn gold w-only" onclick="formMember()">${ic('plus',2.4)} إضافة أول عضو</button></div>`;
   const activeM=M.filter(m=>m.status==='active');
   const wk=addDays(t,-6);
@@ -491,6 +611,7 @@ function vDash(){
   M.filter(m=>m.status!=='dismissed').forEach(m=>{const n=aw.filter(w=>w.memberId===m.id).length;if(n>=S.cfg.maxWarnings)al.push(['red',`<b>${esc(m.name)}</b> لديه ${n} إنذارات فعّالة — تجاوز الحد المسموح (${S.cfg.maxWarnings}).`,m.id])});
   activeM.forEach(m=>{if(isOnLeave(m.id))return;const last=W.filter(w=>w.memberId===m.id).map(w=>w.date).sort().pop();const ref=last||m.joined;if(ref&&daysBetween(ref,t)>=S.cfg.inactiveDays)al.push(['amber',`<b>${esc(m.name)}</b> بدون أي عمل مسجّل منذ ${daysBetween(ref,t)} يوم.`,m.id])});
   aw.forEach(w=>{if(w.expires&&daysBetween(t,w.expires)<=3)al.push(['blue',`إنذار <b>${esc(mName(w.memberId))}</b> (${WLEVEL[w.level]?.[0]}) ينتهي ${w.expires===t?'اليوم':'خلال '+daysBetween(t,w.expires)+' يوم'}.`,w.memberId])});
+  if(PM.length)al.unshift(['blue',`يوجد <b>${PM.length}</b> طلب انضمام جديد بانتظار موافقتك. <a href="#members">مراجعة الطلبات</a>`]);
   if(pend.length)al.unshift(['amber',`يوجد <b>${pend.length}</b> عمل بانتظار مراجعتك واعتمادك. <a href="#works" onclick="F.ws='pending'">مراجعة الآن</a>`]);
   // chart 14 days
   const days=[...Array(14)].map((_,i)=>addDays(t,i-13));
@@ -532,27 +653,29 @@ function vDash(){
 
 /* ---- members ---- */
 function vMembers(){
-  let M=arr('members');
+  let M=arr('members').filter(m=>m.status!=='pending'||F.mstat==='pending');
   const q=F.mq.trim().toLowerCase();
   if(q)M=M.filter(m=>[m.name,m.discordId,m.badge,m.rank].join(' ').toLowerCase().includes(q));
   if(F.mstat!=='all')M=M.filter(m=>m.status===F.mstat);
   if(F.mrank!=='all')M=M.filter(m=>m.rank===F.mrank);
   const ro=S.cfg.ranks;M.sort((a,b)=>(ro.indexOf(a.rank)+99*(ro.indexOf(a.rank)<0))-(ro.indexOf(b.rank)+99*(ro.indexOf(b.rank)<0))||String(a.name).localeCompare(b.name,'ar'));
   const [f0,f1]=periodRange('month');
-  return `<div class="bar">
+  const PM=arr('members').filter(m=>m.status==='pending');
+  return `${PM.length?`<div class="card mb" style="border-color:#4a2f66"><h3>${ic('users')} طلبات الانضمام الجديدة <span class="muted">(${PM.length})</span></h3><div class="list">${PM.map(m=>`<div class="li">${personM(m,m.email||'')}<div class="grow" style="font-size:13px"><span class="dim">ديسكورد:</span> <span style="direction:ltr;display:inline-block">${esc(m.discordId||'—')}</span> · <span class="dim">الرتبة المختارة:</span> ${esc(m.rank||'—')}${m.badge?` · #${esc(m.badge)}`:''}${m.notes?`<div class="dim">${esc(m.notes)}</div>`:''}</div><button class="btn sm gold" onclick="approveMember('${m.id}')">${ic('check')} قبول</button><button class="btn sm" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="btn sm red" onclick="rejectMember('${m.id}')">رفض</button></div>`).join('')}</div></div>`:''}
+  <div class="bar">
     <div class="search">${ic('search')}<input id="mq" class="inp" placeholder="بحث بالاسم، الآيدي، الرقم الوظيفي…" value="${esc(F.mq)}" oninput="setF('mq',this.value)"></div>
     <select class="inp" onchange="setF('mstat',this.value)"><option value="all">كل الحالات</option>${Object.entries(STATUS).map(([k,[t]])=>`<option value="${k}" ${F.mstat===k?'selected':''}>${t}</option>`).join('')}</select>
     <select class="inp" onchange="setF('mrank',this.value)"><option value="all">كل الرتب</option>${S.cfg.ranks.map(r=>`<option ${F.mrank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
     <button class="btn gold right w-only" onclick="formMember()">${ic('plus',2.4)} إضافة عضو</button>
   </div>
-  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>آيدي ديسكورد</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
+  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>آيدي ديسكورد</th><th>الحساب</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
   ${M.map(m=>{const s=statsFor(m.id,f0,f1);const st=isOnLeave(m.id)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
-   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${esc(m.discordId||'—')}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
+   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${esc(m.discordId||'—')}</td><td>${m.role==='admin'?chip(['مسؤول','c-gold']):m.userId?`<span class="dim" style="font-size:12.5px;direction:ltr;display:inline-block">${esc(m.email||'مرتبط')}</span>`:'<span class="dim">بدون حساب</span>'}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
    <td class="actions" onclick="event.stopPropagation()"><button class="icon-btn" title="الملف" onclick="openProfile('${m.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('members','${m.id}','العضو ${esc(m.name)}')">${ic('trash')}</button></td></tr>`}).join('')}
   </tbody></table></div>`:emptyBox('لا يوجد أعضاء','أضف أعضاء فريق الرقابة والتفتيش لبدء المتابعة.','formMember()','إضافة عضو')}`;
 }
 function emptyBox(t,d,fn,b){return `<div class="card empty"><img src="${LOGO}" alt=""><div class="big">${t}</div><p class="mb">${d}</p>${fn?`<button class="btn gold w-only" onclick="${fn}">${ic('plus',2.4)} ${b}</button>`:''}</div>`}
-function memberOpts(sel,all){const M=arr('members').filter(m=>m.status!=='dismissed'||m.id===sel).sort((a,b)=>String(a.name).localeCompare(b.name,'ar'));return (all?`<option value="all">كل الأعضاء</option>`:`<option value="">— اختر العضو —</option>`)+M.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${esc(m.name)}${m.badge?' · '+esc(m.badge):''}</option>`).join('')}
+function memberOpts(sel,all){const M=team().filter(m=>m.status!=='dismissed'||m.id===sel).sort((a,b)=>String(a.name).localeCompare(b.name,'ar'));return (all?`<option value="all">كل الأعضاء</option>`:`<option value="">— اختر العضو —</option>`)+M.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${esc(m.name)}${m.badge?' · '+esc(m.badge):''}</option>`).join('')}
 
 /* ---- works ---- */
 function vWorks(){
@@ -566,7 +689,7 @@ function vWorks(){
   const pts=W.filter(w=>w.status==='approved').reduce((a,w)=>a+(+w.points||0),0);
   return `<div class="bar">
     <div class="search">${ic('search')}<input id="wq" class="inp" placeholder="بحث في الأعمال…" value="${esc(F.wq)}" oninput="setF('wq',this.value)"></div>
-    <select class="inp" onchange="setF('wm',this.value)">${memberOpts(F.wm,1)}</select>
+    <select class="inp a-only" onchange="setF('wm',this.value)">${memberOpts(F.wm,1)}</select>
     <select class="inp" onchange="setF('wt',this.value)"><option value="all">كل الأنواع</option>${S.cfg.workTypes.map(t=>`<option ${F.wt===t.n?'selected':''}>${esc(t.n)}</option>`).join('')}</select>
     <select class="inp" onchange="setF('ws',this.value)"><option value="all">كل الحالات</option>${Object.entries(WSTAT).map(([k,[t]])=>`<option value="${k}" ${F.ws===k?'selected':''}>${t}</option>`).join('')}</select>
     ${segP('wp')}
@@ -575,8 +698,8 @@ function vWorks(){
   <div class="flex mb muted" style="font-size:13.5px">${W.length} عمل · ${pts} نقطة معتمدة</div>
   ${W.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>نوع العمل</th><th>التفاصيل</th><th>التاريخ</th><th>النقاط</th><th>الحالة</th><th></th></tr></thead><tbody>
   ${W.map(w=>`<tr><td class="clickable" onclick="openProfile('${w.memberId}')">${person(w.memberId)}</td><td>${chip([w.type,'c-gold'])}</td><td style="max-width:340px"><b>${esc(w.title||'')}</b>${w.location?`<div class="dim" style="font-size:12.5px">📍 ${esc(w.location)}</div>`:''}${w.details?`<div class="dim" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.details)}</div>`:''}</td><td class="dim">${fmtD(w.date)}</td><td class="score">${w.status==='approved'?'+'+(+w.points||0):'<span class="dim">'+(+w.points||0)+'</span>'}</td><td>${chip(WSTAT[w.status]||WSTAT.pending)}</td>
-  <td class="actions">${w.status==='pending'?`<button class="icon-btn w-only" style="color:var(--green)" title="اعتماد" onclick="setWork('${w.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn w-only" style="color:var(--red)" title="رفض" onclick="setWork('${w.id}','rejected')">${ic('x',2.6)}</button>`:''}<button class="icon-btn" title="عرض" onclick="viewWork('${w.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formWork('${w.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('works','${w.id}','هذا العمل')">${ic('trash')}</button></td></tr>`).join('')}
-  </tbody></table></div>`:emptyBox('لا توجد أعمال','سجّل أعمال الأعضاء من جولات تفتيش ومخالفات وتقارير.','formWork()','تسجيل عمل')}`;
+  <td class="actions">${w.status==='pending'?`<button class="icon-btn a-only" style="color:var(--green)" title="اعتماد" onclick="setWork('${w.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn a-only" style="color:var(--red)" title="رفض" onclick="setWork('${w.id}','rejected')">${ic('x',2.6)}</button>`:''}<button class="icon-btn" title="عرض" onclick="viewWork('${w.id}')">${ic('eye')}</button>${isAdmin()||w.status==='pending'?`<button class="icon-btn" title="تعديل" onclick="formWork('${w.id}')">${ic('edit')}</button><button class="icon-btn del" title="حذف" onclick="askDel('works','${w.id}','هذا العمل')">${ic('trash')}</button>`:''}</td></tr>`).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد أعمال',isAdmin()?'سجّل أعمال الأعضاء من جولات تفتيش ومخالفات وتقارير.':'سجّل أعمالك الرقابية وبتوصل للمسؤول للمراجعة والاعتماد.','formWork()','تسجيل عمل')}`;
 }
 function segP(k){return `<div class="seg">${[['week','أسبوع'],['month','شهر'],['quarter','3 أشهر'],['all','الكل']].map(([v,t])=>`<button class="${F[k]===v?'on':''}" onclick="setF('${k}','${v}')">${t}</button>`).join('')}</div>`}
 function setWork(id,st){if(!canW())return;const w=S.works[id];put('works',id,{...w,status:st});toast(st==='approved'?'تم اعتماد العمل ✓':'تم رفض العمل')}
@@ -593,15 +716,15 @@ function vWarnings(){
   return `<div class="grid g4 mb" style="grid-template-columns:repeat(5,1fr)">${Object.entries(WLEVEL).map(([k,[t,c]])=>`<div class="card stat" style="padding:14px"><div class="k">${t}</div><div class="v" style="font-size:26px">${cnt(k)}</div></div>`).join('')}</div>
   <div class="bar">
     <div class="search">${ic('search')}<input id="xq" class="inp" placeholder="بحث في الإنذارات…" value="${esc(F.xq)}" oninput="setF('xq',this.value)"></div>
-    <select class="inp" onchange="setF('xm',this.value)">${memberOpts(F.xm,1)}</select>
+    <select class="inp a-only" onchange="setF('xm',this.value)">${memberOpts(F.xm,1)}</select>
     <select class="inp" onchange="setF('xl',this.value)"><option value="all">كل الدرجات</option>${Object.entries(WLEVEL).map(([k,[t]])=>`<option value="${k}" ${F.xl===k?'selected':''}>${t}</option>`).join('')}</select>
     <select class="inp" onchange="setF('xs',this.value)"><option value="all">كل الحالات</option>${Object.entries(WARNST).map(([k,[t]])=>`<option value="${k}" ${F.xs===k?'selected':''}>${t}</option>`).join('')}</select>
-    <button class="btn gold right w-only" onclick="formWarning()">${ic('plus',2.4)} إصدار إنذار</button>
+    <button class="btn gold right a-only" onclick="formWarning()">${ic('plus',2.4)} إصدار إنذار</button>
   </div>
   ${X.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الدرجة</th><th>السبب</th><th>التاريخ</th><th>ينتهي</th><th>صادر من</th><th>الحالة</th><th></th></tr></thead><tbody>
   ${X.map(w=>{const st=warnActive(w)?WARNST.active:w.status==='cancelled'?WARNST.cancelled:WARNST.expired;return `<tr><td class="clickable" onclick="openProfile('${w.memberId}')">${person(w.memberId)}</td><td>${chip(WLEVEL[w.level]||WLEVEL.w1)}</td><td style="max-width:320px">${esc(w.reason)}</td><td class="dim">${fmtD(w.date)}</td><td class="dim">${w.expires?fmtD(w.expires):'دائم'}</td><td>${esc(w.issuedBy||'—')}</td><td>${chip(st)}</td>
-  <td class="actions">${warnActive(w)?`<button class="btn sm w-only" onclick="cancelWarn('${w.id}')">إلغاء</button>`:''}<button class="icon-btn w-only" onclick="formWarning(null,'${w.id}')">${ic('edit')}</button><button class="icon-btn del w-only" onclick="askDel('warnings','${w.id}','هذا الإنذار')">${ic('trash')}</button></td></tr>`}).join('')}
-  </tbody></table></div>`:emptyBox('لا توجد إنذارات','سجل الإنذارات نظيف.','formWarning()','إصدار إنذار')}`;
+  <td class="actions a-only">${warnActive(w)?`<button class="btn sm w-only" onclick="cancelWarn('${w.id}')">إلغاء</button>`:''}<button class="icon-btn w-only" onclick="formWarning(null,'${w.id}')">${ic('edit')}</button><button class="icon-btn del w-only" onclick="askDel('warnings','${w.id}','هذا الإنذار')">${ic('trash')}</button></td></tr>`}).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد إنذارات','سجل الإنذارات نظيف ✓',isAdmin()?'formWarning()':'','إصدار إنذار')}`;
 }
 function cancelWarn(id){if(!canW())return;put('warnings',id,{...S.warnings[id],status:'cancelled'});toast('تم إلغاء الإنذار')}
 
@@ -619,32 +742,81 @@ function vLeaves(){
     <div class="search">${ic('search')}<input id="lq" class="inp" placeholder="بحث…" value="${esc(F.lq)}" oninput="setF('lq',this.value)"></div>
     <select class="inp" onchange="setF('lt',this.value)"><option value="all">كل الأنواع</option>${Object.entries(LTYPE).map(([k,[t]])=>`<option value="${k}" ${F.lt===k?'selected':''}>${t}</option>`).join('')}</select>
     <select class="inp" onchange="setF('ls',this.value)"><option value="all">كل الحالات</option>${Object.entries(LSTAT).map(([k,[t]])=>`<option value="${k}" ${F.ls===k?'selected':''}>${t}</option>`).join('')}</select>
-    <button class="btn gold right w-only" onclick="formLeave()">${ic('plus',2.4)} تسجيل إجازة / غياب</button>
+    <button class="btn gold right w-only" onclick="formLeave()">${ic('plus',2.4)} ${isAdmin()?'تسجيل إجازة / غياب':'طلب إجازة'}</button>
   </div>
   ${L.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>النوع</th><th>من</th><th>إلى</th><th>المدة</th><th>السبب</th><th>الحالة</th><th></th></tr></thead><tbody>
   ${L.map(l=>`<tr><td class="clickable" onclick="openProfile('${l.memberId}')">${person(l.memberId)}</td><td>${chip(LTYPE[l.type]||LTYPE.leave)}</td><td class="dim">${fmtD(l.from)}</td><td class="dim">${fmtD(l.to||l.from)}</td><td>${daysBetween(l.from,l.to||l.from)+1} يوم</td><td style="max-width:280px">${esc(l.reason||'—')}</td><td>${chip(LSTAT[l.status]||LSTAT.pending)}</td>
-  <td class="actions">${l.status==='pending'?`<button class="icon-btn w-only" style="color:var(--green)" title="قبول" onclick="setLeave('${l.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn w-only" style="color:var(--red)" title="رفض" onclick="setLeave('${l.id}','rejected')">${ic('x',2.6)}</button>`:''}<button class="icon-btn w-only" onclick="formLeave(null,'${l.id}')">${ic('edit')}</button><button class="icon-btn del w-only" onclick="askDel('leaves','${l.id}','هذا السجل')">${ic('trash')}</button></td></tr>`).join('')}
-  </tbody></table></div>`:emptyBox('لا توجد إجازات أو غيابات','سجّل الإجازات والغيابات لاحتسابها في المتابعة.','formLeave()','تسجيل')}`;
+  <td class="actions">${l.status==='pending'?`<button class="icon-btn a-only" style="color:var(--green)" title="قبول" onclick="setLeave('${l.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn a-only" style="color:var(--red)" title="رفض" onclick="setLeave('${l.id}','rejected')">${ic('x',2.6)}</button>`:''}${isAdmin()||l.status==='pending'?`<button class="icon-btn" onclick="formLeave(null,'${l.id}')">${ic('edit')}</button><button class="icon-btn del" onclick="askDel('leaves','${l.id}','هذا السجل')">${ic('trash')}</button>`:''}</td></tr>`).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد إجازات أو غيابات',isAdmin()?'سجّل الإجازات والغيابات لاحتسابها في المتابعة.':'إذا تحتاج إجازة قدّم طلبك من هنا.','formLeave()',isAdmin()?'تسجيل':'طلب إجازة')}`;
 }
 function setLeave(id,st){if(!canW())return;put('leaves',id,{...S.leaves[id],status:st});toast(st==='approved'?'تم قبول الطلب':'تم رفض الطلب')}
 
 /* ---- ranking ---- */
 function vRanking(){
-  const [f0,f1]=periodRange(F.kp);
-  const R=arr('members').filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score||b.s.appr.length-a.s.appr.length);
-  if(!R.length)return emptyBox('لا يوجد أعضاء للترتيب','','formMember()','إضافة عضو');
+  const [f0,f1]=periodRange(F.kp);let R;
+  if(!isAdmin()&&MODE==='cloud'){
+    if(S.boardKey!==F.kp)loadBoard();
+    R=(S.board||[]).map(b=>({m:{id:b.member_id,name:b.member_name,rank:b.member_rank},s:{score:b.score,appr:{length:b.works_count},pts:b.points,pen:b.penalty,warns:{length:b.warnings_count},absent:b.absences}}));
+    if(!S.board)return '<div class="card empty">جاري تحميل الترتيب…</div>';
+  }else R=team().filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score||b.s.appr.length-a.s.appr.length);
+  if(!R.length)return emptyBox('لا يوجد أعضاء للترتيب','',isAdmin()?'formMember()':'','إضافة عضو');
+  const can=id=>isAdmin()||id===ME.memberId;const oc=id=>can(id)?`onclick="openProfile('${id}')"`:'';
   const p=R.slice(0,3);const podOrder=[p[1],p[0],p[2]];const cls=['p2','p1','p3'];const lbl=['المركز الثاني','المركز الأول','المركز الثالث'];
   return `<div class="bar">${segP('kp')}<span class="muted right" style="font-size:13px">النقاط = نقاط الأعمال المعتمدة − خصم الإنذارات − 5 لكل غياب بدون عذر</span></div>
-  <div class="podium">${podOrder.map((x,i)=>x?`<div class="pod ${cls[i]} clickable" onclick="openProfile('${x.m.id}')"><span class="medal">${lbl[i]}</span><div class="av ${i===1?'lg':''}" style="${i!==1?'width:56px;height:56px;font-size:20px':''}">${esc(initials(x.m.name))}</div><div style="font-weight:800;font-family:Cairo">${esc(x.m.name)}</div><div class="dim" style="font-size:12.5px">${esc(x.m.rank||'')}</div><div class="sc">${x.s.score}</div><div class="dim" style="font-size:12.5px">${x.s.appr.length} عمل معتمد</div></div>`:'<div></div>').join('')}</div>
+  <div class="podium">${podOrder.map((x,i)=>x?`<div class="pod ${cls[i]} ${can(x.m.id)?'clickable':''}" ${oc(x.m.id)}><span class="medal">${lbl[i]}</span><div class="av ${i===1?'lg':''}" style="${i!==1?'width:56px;height:56px;font-size:20px':''}">${esc(initials(x.m.name))}</div><div style="font-weight:800;font-family:Cairo">${esc(x.m.name)}${x.m.id===ME.memberId?' <span class="chip c-gold">أنت</span>':''}</div><div class="dim" style="font-size:12.5px">${esc(x.m.rank||'')}</div><div class="sc">${x.s.score}</div><div class="dim" style="font-size:12.5px">${x.s.appr.length} عمل معتمد</div></div>`:'<div></div>').join('')}</div>
   <div class="tbl-wrap"><table><thead><tr><th>#</th><th>العضو</th><th>أعمال معتمدة</th><th>نقاط الأعمال</th><th>الإنذارات</th><th>خصم</th><th>غياب بدون عذر</th><th>المجموع</th></tr></thead><tbody>
-  ${R.map((x,i)=>`<tr class="clickable" onclick="openProfile('${x.m.id}')"><td class="rank-n" style="${i<3?'color:var(--gold2)':''}">${i+1}</td><td>${person(x.m.id)}</td><td>${x.s.appr.length}</td><td style="color:var(--green)">+${x.s.pts}</td><td>${x.s.warns.length}</td><td style="color:var(--red)">${x.s.pen?'-'+x.s.pen:'0'}</td><td>${x.s.absent}</td><td class="score" style="font-size:17px">${x.s.score}</td></tr>`).join('')}
+  ${R.map((x,i)=>`<tr class="${can(x.m.id)?'clickable':''}" ${oc(x.m.id)} style="${x.m.id===ME.memberId&&!isAdmin()?'background:#d4a24c14':''}"><td class="rank-n" style="${i<3?'color:var(--gold2)':''}">${i+1}</td><td>${personM(x.m)}</td><td>${x.s.appr.length}</td><td style="color:var(--green)">+${x.s.pts}</td><td>${x.s.warns.length}</td><td style="color:var(--red)">${x.s.pen?'-'+x.s.pen:'0'}</td><td>${x.s.absent}</td><td class="score" style="font-size:17px">${x.s.score}</td></tr>`).join('')}
   </tbody></table></div>`;
 }
+
+/* ---- inspector: my dashboard ---- */
+function vMe(){
+  const m=S.members[ME.memberId];if(!m)return '<div class="card empty">جاري التحميل…</div>';
+  const s=statsFor(ME.memberId);const [f0,f1]=periodRange('month');const sm=statsFor(ME.memberId,f0,f1);
+  if(S.boardKey!=='month'&&F.kp==='month')loadBoard();
+  const B=S.boardKey==='month'?S.board||[]:[];const pos=B.findIndex(b=>b.member_id===ME.memberId);
+  const pend=s.works.filter(w=>w.status==='pending').length;
+  const W=[...s.works].sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0)).slice(0,6);
+  const aw=s.activeW;const st=isOnLeave(ME.memberId)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
+  return `<div class="card mb"><div class="prof-head" style="margin:0"><div class="av lg">${esc(initials(m.name))}</div><div style="flex:1;min-width:200px"><div class="muted" style="font-size:13px">أهلاً بك 👋</div><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'مفتش','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}</div></div>
+   <div class="flex"><button class="btn gold" onclick="formWork()">${ic('plus',2.4)} تسجيل عمل</button><button class="btn" onclick="formLeave()">${ic('leave')} طلب إجازة</button></div></div></div>
+  ${m.status==='suspended'?`<div class="alert amber">${ic('warn')}<div>حسابك <b>موقوف مؤقتاً</b> — تواصل مع مسؤول الرقابة والتفتيش.</div></div>`:''}
+  ${aw.length?`<div class="alert red">${ic('warn')}<div>عليك <b>${aw.length}</b> ${aw.length===1?'إنذار فعّال':'إنذارات فعّالة'}. <a href="#warnings">التفاصيل</a></div></div>`:''}
+  <div class="grid g4 mb">
+   <div class="card stat"><div class="ic">${ic('star')}</div><div class="k">نقاطي هذا الشهر</div><div class="v">${sm.score}</div><div class="s">المجموع الكلي: ${s.score}</div></div>
+   <div class="card stat green"><div class="ic">${ic('trophy')}</div><div class="k">ترتيبي هذا الشهر</div><div class="v">${pos>=0?'#'+(pos+1):'—'}</div><div class="s">${B.length?'من '+B.length+' عضو':''}</div></div>
+   <div class="card stat blue"><div class="ic">${ic('work')}</div><div class="k">أعمال معتمدة</div><div class="v">${s.appr.length}</div><div class="s">${pend} بانتظار المراجعة</div></div>
+   <div class="card stat red"><div class="ic">${ic('warn')}</div><div class="k">إنذارات فعّالة</div><div class="v">${aw.length}</div><div class="s">${s.warns.length} إنذار إجمالي</div></div>
+  </div>
+  <div class="grid g2">
+   <div class="card"><div class="card-head"><h3>${ic('work')} آخر أعمالي</h3><a class="btn sm" href="#works">الكل</a></div>
+    <div class="list">${W.length?W.map(w=>`<div class="li clickable" onclick="viewWork('${w.id}')"><div class="grow"><div class="t">${esc(w.title||w.type)}</div><div class="d">${esc(w.type)} · ${fmtD(w.date)}</div></div>${chip(WSTAT[w.status]||WSTAT.pending)}<span class="score">${w.status==='approved'?'+'+w.points:''}</span></div>`).join(''):`<div class="empty">ما سجّلت أي عمل بعد<br><button class="btn gold sm mt" onclick="formWork()">${ic('plus',2.4)} سجّل أول عمل</button></div>`}</div></div>
+   <div class="card"><h3>${ic('warn')} إنذاراتي الفعّالة</h3>
+    <div class="list">${aw.length?aw.map(w=>`<div class="li"><div class="grow"><div class="t">${esc(w.reason)}</div><div class="d">${fmtD(w.date)} · ينتهي: ${w.expires?fmtD(w.expires):'دائم'}</div></div>${chip(WLEVEL[w.level])}</div>`).join(''):'<div class="empty" style="color:var(--green)">سجلك نظيف ✓</div>'}</div></div>
+  </div>`;
+}
+function vProfile(){
+  const m=S.members[ME.memberId];if(!m)return '';
+  return `<div class="card" style="max-width:720px"><div class="prof-head"><div class="av lg">${esc(initials(m.name))}</div><div><h2>${esc(m.name)}</h2><div class="dim" style="direction:ltr;text-align:right">${esc(ME.email)}</div></div></div>
+  <form onsubmit="saveMyProfile(event)"><div class="form">
+   ${fld('الاسم في السيرفر',`<input class="inp" name="name" required value="${esc(m.name||'')}">`,0,1)}
+   ${fld('يوزر / آيدي ديسكورد',`<input class="inp" name="discordId" required value="${esc(m.discordId||'')}" style="direction:ltr;text-align:right">`,0,1)}
+   ${fld('الرتبة',`<input class="inp" value="${esc(m.rank||'—')}" disabled>`)}
+   ${fld('الرقم الوظيفي',`<input class="inp" value="${esc(m.badge||'—')}" disabled>`)}
+   ${fld('تاريخ الانضمام',`<input class="inp" value="${fmtD(m.joined)}" disabled>`)}
+   ${fld('الحالة',`<input class="inp" value="${(STATUS[m.status]||STATUS.active)[0]}" disabled>`)}
+  </div><div class="hint mt">الرتبة والرقم الوظيفي والحالة يحددها مسؤول الرقابة والتفتيش.</div>
+  <div class="flex mt"><button class="btn gold" type="submit">${ic('check')} حفظ التعديلات</button><button class="btn" type="button" onclick="doLogout()">تسجيل الخروج</button></div></form></div>`;
+}
+function saveMyProfile(e){e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const m=S.members[ME.memberId];
+  put('members',ME.memberId,{...m,name:o.name.trim(),discordId:o.discordId.trim()});toast('تم حفظ بياناتك ✓')}
+function approveMember(id){put('members',id,{...S.members[id],status:'active',joined:S.members[id].joined||today()});toast('تم قبول العضو ✓')}
+function rejectMember(id){openModal('رفض طلب الانضمام',`<p>رفض طلب <b>${esc(S.members[id].name)}</b>؟ ما راح يقدر يدخل النظام.</p>`,()=>{put('members',id,{...S.members[id],status:'dismissed'});toast('تم رفض الطلب')},'رفض الطلب')}
 
 /* ---- reports ---- */
 function vReports(){
   let [f0,f1]=F.rp==='custom'?[F.rFrom,F.rTo]:periodRange(F.rp);
-  const R=arr('members').filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score);
+  const R=team().filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score);
   const totW=R.reduce((a,x)=>a+x.s.appr.length,0),totX=R.reduce((a,x)=>a+x.s.warns.length,0);
   const inactive=R.filter(x=>x.m.status==='active'&&!x.s.works.length);
   const label=f0?`من ${fmtD(f0)} إلى ${fmtD(f1||today())}`:'كل الفترات';
@@ -746,23 +918,25 @@ function formMember(id){
    ${fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map(r=>`<option ${m.rank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
    ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
+   ${fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">مفتش</option><option value="admin" ${m.role==='admin'?'selected':''}>مسؤول (صلاحيات كاملة)</option></select>`)}
+   ${fld('الإيميل',`<input class="inp" value="${esc(m.email||'لم يسجّل دخول بعد')}" disabled style="direction:ltr;text-align:right">`)}
    ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;if(id===ME.memberId&&o.role!=='admin'&&MODE==='cloud'){toast('ما تقدر تشيل صلاحية المسؤول عن نفسك',true);return false}const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
 }
 function formWork(id,preMember){
-  if(!canW())return;if(!arr('members').length){toast('أضف عضواً أولاً',true);location.hash='members';return}
-  const w=id?S.works[id]:{date:today(),status:'approved',type:S.cfg.workTypes[0]?.n,memberId:preMember||''};
+  if(!canW())return;const A=isAdmin();if(A&&!team().length){toast('أضف عضواً أولاً',true);location.hash='members';return}
+  const w=id?S.works[id]:{date:today(),status:A?'approved':'pending',type:S.cfg.workTypes[0]?.n,memberId:preMember||(A?'':ME.memberId)};
   openModal(id?'تعديل عمل':'تسجيل عمل جديد',`<div class="form">
-   ${fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(w.memberId)}</select>`,0,1)}
-   ${fld('نوع العمل',`<select class="inp" name="type" id="wType" onchange="document.getElementById('wPts').value=typePts(this.value)">${S.cfg.workTypes.map(t=>`<option ${w.type===t.n?'selected':''}>${esc(t.n)}</option>`).join('')}</select>`)}
+   ${A?fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(w.memberId)}</select>`,0,1):''}
+   ${fld('نوع العمل',`<select class="inp" name="type" id="wType" onchange="const p=document.getElementById('wPts');if(p)p.value=typePts(this.value)">${S.cfg.workTypes.map(t=>`<option ${w.type===t.n?'selected':''}>${esc(t.n)}</option>`).join('')}</select>`)}
    ${fld('عنوان العمل',`<input class="inp" name="title" required value="${esc(w.title||'')}" placeholder="مثال: تفتيش دورية المنطقة الشمالية">`,1,1)}
    ${fld('التاريخ',`<input class="inp" type="date" name="date" required value="${w.date}">`)}
    ${fld('الموقع / المكان',`<input class="inp" name="location" value="${esc(w.location||'')}">`)}
-   ${fld('النقاط',`<input class="inp" type="number" id="wPts" name="points" value="${w.points??typePts(w.type)}">`)}
-   ${fld('الحالة',`<select class="inp" name="status">${opts(WSTAT,w.status)}</select>`)}
+   ${A?fld('النقاط',`<input class="inp" type="number" id="wPts" name="points" value="${w.points??typePts(w.type)}">`):''}
+   ${A?fld('الحالة',`<select class="inp" name="status">${opts(WSTAT,w.status)}</select>`):''}
    ${fld('التفاصيل',`<textarea class="inp" name="details" placeholder="وصف ما تم…">${esc(w.details||'')}</textarea>`,1)}
    ${fld('رابط الإثبات',`<input class="inp" name="proof" value="${esc(w.proof||'')}" placeholder="رابط صورة/مقطع/رسالة ديسكورد" style="direction:ltr;text-align:right">`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.memberId){toast('اختر العضو',true);return false}o.points=+o.points||0;put('works',id||uid(),{...(id?S.works[id]:{createdAt:Date.now()}),...o});toast(id?'تم التعديل':'تم تسجيل العمل ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!A){o.memberId=ME.memberId;o.status='pending';o.points=typePts(o.type)}if(!o.memberId){toast('اختر العضو',true);return false}o.points=+o.points||0;put('works',id||uid(),{...(id?S.works[id]:{createdAt:Date.now()}),...o});toast(id?'تم التعديل':A?'تم تسجيل العمل ✓':'تم إرسال العمل للمراجعة ✓')},A?'حفظ':'إرسال للمراجعة');
 }
 function viewWork(id){const w=S.works[id];openModal('تفاصيل العمل',`${person(w.memberId)}<div class="mt flex">${chip([w.type,'c-gold'])}${chip(WSTAT[w.status])}<span class="dim">${fmtD(w.date)}</span><span class="score right">${w.points} نقطة</span></div>
   <h3 class="mt" style="font-size:17px">${esc(w.title||'')}</h3>${w.location?`<p class="dim">📍 ${esc(w.location)}</p>`:''}<p class="mt" style="white-space:pre-wrap">${esc(w.details||'لا توجد تفاصيل')}</p>${w.proof?`<p class="mt">الإثبات: <a href="${esc(w.proof)}" target="_blank" rel="noopener" style="direction:ltr;display:inline-block">${esc(w.proof)}</a></p>`:''}`,null)}
@@ -782,16 +956,17 @@ function formWarning(preMember,id){
    if(!id){const n=arr('warnings').filter(x=>x.memberId===o.memberId&&warnActive(x)).length;toast(n>=S.cfg.maxWarnings?`⚠️ ${mName(o.memberId)} وصل إلى ${n} إنذارات فعّالة!`:'تم إصدار الإنذار',n>=S.cfg.maxWarnings)}else toast('تم التعديل')},id?'حفظ':'إصدار الإنذار');
 }
 function formLeave(preMember,id){
-  if(!canW())return;if(!arr('members').length){toast('أضف عضواً أولاً',true);location.hash='members';return}
-  const l=id?S.leaves[id]:{from:today(),to:today(),type:'leave',status:'approved',memberId:preMember||''};
-  openModal(id?'تعديل سجل':'تسجيل إجازة / غياب',`<div class="form">
-   ${fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(l.memberId)}</select>`,1,1)}
-   ${fld('النوع',`<select class="inp" name="type">${opts(LTYPE,l.type)}</select>`)}
-   ${fld('الحالة',`<select class="inp" name="status">${opts(LSTAT,l.status)}</select>`)}
+  if(!canW())return;const A=isAdmin();if(A&&!team().length){toast('أضف عضواً أولاً',true);location.hash='members';return}
+  const l=id?S.leaves[id]:{from:today(),to:today(),type:'leave',status:A?'approved':'pending',memberId:preMember||(A?'':ME.memberId)};
+  const LT=A?LTYPE:{leave:LTYPE.leave,excused:LTYPE.excused};
+  openModal(id?'تعديل سجل':A?'تسجيل إجازة / غياب':'طلب إجازة',`<div class="form">
+   ${A?fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(l.memberId)}</select>`,1,1):''}
+   ${fld('النوع',`<select class="inp" name="type">${opts(LT,l.type)}</select>`,!A)}
+   ${A?fld('الحالة',`<select class="inp" name="status">${opts(LSTAT,l.status)}</select>`):''}
    ${fld('من',`<input class="inp" type="date" name="from" required value="${l.from}">`)}
    ${fld('إلى',`<input class="inp" type="date" name="to" value="${l.to||''}">`)}
    ${fld('السبب',`<textarea class="inp" name="reason">${esc(l.reason||'')}</textarea>`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.memberId){toast('اختر العضو',true);return false}if(o.to&&o.to<o.from){toast('تاريخ النهاية قبل البداية',true);return false}put('leaves',id||uid(),{...(id?S.leaves[id]:{createdAt:Date.now()}),...o});toast('تم الحفظ ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!A){o.memberId=ME.memberId;o.status='pending'}if(!o.memberId){toast('اختر العضو',true);return false}if(o.to&&o.to<o.from){toast('تاريخ النهاية قبل البداية',true);return false}put('leaves',id||uid(),{...(id?S.leaves[id]:{createdAt:Date.now()}),...o});toast('تم الحفظ ✓')});
 }
 
 /* ---- profile ---- */
@@ -816,7 +991,7 @@ function drawProfile(){
   if(pTab==='leaves')body=allL.length?`<div class="list">${allL.map(l=>`<div class="li"><div class="grow"><div class="t">${fmtD(l.from)} ← ${fmtD(l.to||l.from)} <span class="dim">(${daysBetween(l.from,l.to||l.from)+1} يوم)</span></div><div class="d">${esc(l.reason||'')}</div></div>${chip(LTYPE[l.type])}${chip(LSTAT[l.status])}</div>`).join('')}</div>`:'<div class="empty">لا توجد إجازات</div>';
   openModal('ملف العضو',`
    <div class="prof-head"><div class="av lg">${esc(initials(m.name))}</div><div style="flex:1;min-width:200px"><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'—','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}${m.discordId?`<span class="dim" style="direction:ltr">${esc(m.discordId)}</span>`:''}</div><div class="dim mt" style="font-size:13px;margin-top:6px">انضم: ${fmtD(m.joined)} · آخر عمل: ${s.lastWork?fmtD(s.lastWork):'لا يوجد'}</div></div>
-   <div class="flex w-only"><button type="button" class="btn sm gold" onclick="formWork(null,'${pId}')">${ic('plus',2.4)} عمل</button><button type="button" class="btn sm red" onclick="formWarning('${pId}')">${ic('warn')} إنذار</button><button type="button" class="btn sm" onclick="formLeave('${pId}')">${ic('leave')} إجازة</button><button type="button" class="btn sm" onclick="formMember('${pId}')">${ic('edit')}</button></div></div>
+   <div class="flex w-only"><button type="button" class="btn sm gold" onclick="${isAdmin()||pId===ME.memberId?`formWork(null,'${pId}')`:''}">${ic('plus',2.4)} عمل</button><button type="button" class="btn sm red a-only" onclick="formWarning('${pId}')">${ic('warn')} إنذار</button><button type="button" class="btn sm" onclick="formLeave('${pId}')">${ic('leave')} إجازة</button><button type="button" class="btn sm a-only" onclick="formMember('${pId}')">${ic('edit')}</button></div></div>
    ${m.notes?`<div class="alert amber" style="margin-bottom:14px">${ic('info')}<div>${esc(m.notes)}</div></div>`:''}
    <div class="mini-stats"><div class="mini"><b>${s.score}</b><span>مجموع النقاط</span></div><div class="mini"><b>${sm.score}</b><span>نقاط هذا الشهر</span></div><div class="mini"><b>${s.appr.length}</b><span>أعمال معتمدة</span></div><div class="mini"><b style="color:${s.activeW.length?'#ff9a92':''}">${s.activeW.length}</b><span>إنذارات فعّالة</span></div><div class="mini"><b>${s.leaves.length}</b><span>إجازات/غياب</span></div></div>
    <div class="tabs">${tabs.map(([k,t])=>`<button type="button" class="${pTab===k?'on':''}" onclick="pTab='${k}';drawProfile()">${t}</button>`).join('')}</div>
