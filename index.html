@@ -350,7 +350,7 @@ const LTYPE={leave:['إجازة','c-blue'],excused:['غياب بعذر','c-amber
 const LSTAT={approved:['مقبولة','c-green'],pending:['قيد الطلب','c-amber'],rejected:['مرفوضة','c-red']};
 const DEFAULT_CFG={
   supervisor:'',
-  ranks:['رئيس الرقابة والتفتيش','نائب الرئيس','مشرف رقابة','مفتش أول','مفتش','مفتش متدرب'],
+  ranks:['مسؤول الإدارة العليا','الإدارة العليا'],
   workTypes:[{n:'جولة تفتيشية',p:10},{n:'رقابة ميدانية',p:8},{n:'ضبط مخالفة',p:12},{n:'تقرير رقابي',p:6},{n:'متابعة شكوى',p:7},{n:'مراقبة رومات/دوريات',p:6},{n:'مهمة إدارية',p:5},{n:'حضور اجتماع',p:3}],
   maxWarnings:3,inactiveDays:7
 };
@@ -358,16 +358,16 @@ const COLS=['members','works','warnings','leaves'];
 
 /* ============ state & storage (Supabase) ============ */
 /* ضع بيانات مشروعك من Supabase → Project Settings → API */
-const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';       
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  
+const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';       // مثال: https://xxxxxxxx.supabase.co
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  // anon public key
 const S={members:{},works:{},warnings:{},leaves:{},invites:{},cfg:structuredClone(DEFAULT_CFG),board:null,boardKey:''};
 let SB=null,MODE='loading',READONLY=false,RT=null,pendTimer=null;
 let ME={role:'admin',memberId:null,userId:null};
 const isAdmin=()=>ME.role==='admin'||ME.role==='super';
 const isSuper=()=>ME.role==='super';
-const ROLES={super:['مسؤول الإدارة العليا','c-gold'],admin:['الإدارة العليا','c-violet'],inspector:['عضو رقابة','c-blue']};
+const ROLES={super:['مسؤول الإدارة العليا','c-gold'],admin:['الإدارة العليا','c-violet'],inspector:['الإدارة العليا','c-violet']};
 const LSK='np9-rqaba-v1';
-function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg};}}catch(e){}}
+function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg,ranks:DEFAULT_CFG.ranks};}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LSK,JSON.stringify({members:S.members,works:S.works,warnings:S.warnings,leaves:S.leaves,cfg:S.cfg}))}catch(e){}}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const toSnake=k=>k.replace(/[A-Z]/g,c=>'_'+c.toLowerCase());
@@ -409,7 +409,7 @@ async function loadTable(c){
 }
 async function loadCfg(){
   const {data}=await SB.from('config').select('data').eq('id','main').maybeSingle();
-  S.cfg=data&&data.data?{...DEFAULT_CFG,...data.data}:structuredClone(DEFAULT_CFG);
+  S.cfg=data&&data.data?{...DEFAULT_CFG,...data.data,ranks:DEFAULT_CFG.ranks}:structuredClone(DEFAULT_CFG);
 }
 let boardBusy=false;
 async function loadBoard(){
@@ -575,14 +575,13 @@ function formInvite(memberId){
   openModal(m?'إعادة تعيين حساب':'إصدار كود تسجيل',`<div class="form">
    ${m&&m.hasLogin?`<div class="alert amber full">${ic('info')}<div>بيتم إلغاء كلمة مرور <b>${esc(m.name)}</b> الحالية ويطلع من كل الأجهزة، ويسجّل من جديد بالكود ويسوي كلمة مرور جديدة. بياناته وأعماله تبقى كما هي.</div></div>`:''}
    ${fld('اسم المستخدم (المسمى)',`<input class="inp" name="username" required value="${esc(m?(m.username||m.name):'')}" placeholder="الاسم اللي بيدخل فيه">`,1,1)}
-   ${m?'':fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">${ROLES.inspector[0]}</option><option value="admin">${ROLES.admin[0]}</option></select>`)}
-   ${m?'':fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map((r,i)=>`<option ${i===S.cfg.ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
+   ${fld('الرتبة / الصلاحية',`<input class="inp" value="الإدارة العليا" disabled>`,1)}
    ${fld('كود التسجيل',`<input class="inp" value="${fmtCode(code)}" disabled style="font-family:ui-monospace,Consolas,monospace;font-size:20px;letter-spacing:4px;text-align:center;direction:ltr"><div class="hint">يتولّد تلقائياً — يُستخدم مرة وحدة فقط</div>`,1)}
   </div>`,async fd=>{
     const o=Object.fromEntries(fd);const u=o.username.trim();if(!u)return false;
     const taken=arr('members').some(x=>x.id!==memberId&&(x.username||'').toLowerCase()===u.toLowerCase())||arr('invites').some(x=>!x.usedAt&&x.username.toLowerCase()===u.toLowerCase());
     if(taken){toast('اسم المستخدم مستخدم أو له كود ما انستخدم',true);return false}
-    const inv={username:u,role:m?(m.role==='admin'?'admin':'inspector'):o.role,rank:m?m.rank:o.rank,memberId:memberId||'',createdAt:Date.now()};
+    const inv={username:u,role:'admin',rank:'الإدارة العليا',memberId:memberId||'',createdAt:Date.now()};
     if(m&&m.hasLogin){const {error}=await SB.rpc('reset_member_login',{p_member_id:memberId});if(error){toast(error.message,true);return false}S.members[memberId]={...m,hasLogin:false}}
     await put('invites',code,inv);
     setTimeout(()=>openModal('تم إصدار الكود ✓',`<p class="muted mb">أرسل هذي الرسالة للشخص (مثلاً في الديسكورد):</p><div class="pre">${esc(inviteMsg({id:code,...inv}))}</div><button class="btn gold mt" onclick="copyTxt(inviteMsg({id:'${code}',...S.invites['${code}']}))">${ic('copy')} نسخ الرسالة</button>`,null),50);
@@ -939,9 +938,8 @@ function vSettings(){
     <div class="fld"><label>أيام عدم النشاط للتنبيه</label><input class="inp" type="number" min="1" id="setIn" value="${c.inactiveDays}"></div></div>
     <button class="btn gold mt w-only" onclick="saveGeneral()">${ic('check')} حفظ</button>
   </div>
-  <div class="card"><h3>${ic('star')} الرتب <span class="muted">(بالترتيب من الأعلى)</span></h3>
-    <div class="tag-list" id="ranks">${c.ranks.map((r,i)=>`<div class="tag-item"><span>${esc(r)}</span><button class="icon-btn del w-only" onclick="rmRank(${i})">${ic('x')}</button></div>`).join('')}</div>
-    <div class="flex mt w-only"><input class="inp" id="newRank" placeholder="رتبة جديدة" style="flex:1"><button class="btn" onclick="addRank()">${ic('plus')} إضافة</button></div>
+  <div class="card"><h3>${ic('star')} الرتب</h3>
+    <div class="list"><div class="li">${chip(ROLES.super)}<div class="grow d">صلاحيات كاملة + إصدار أكواد التسجيل وإعادة تعيين الحسابات</div></div><div class="li">${chip(ROLES.admin)}<div class="grow d">إدارة الأعضاء والأعمال والإنذارات والإجازات والتقارير</div></div></div>
   </div>
   <div class="card"><h3>${ic('work')} أنواع الأعمال والنقاط</h3>
     <div class="tbl-wrap"><table><thead><tr><th>نوع العمل</th><th>النقاط</th><th></th></tr></thead><tbody>
@@ -958,8 +956,8 @@ function vSettings(){
   </div></div>`;
 }
 function saveGeneral(){if(!canW())return;S.cfg={...S.cfg,supervisor:$('#setSup').value.trim(),maxWarnings:Math.max(1,+$('#setMax').value||3),inactiveDays:Math.max(1,+$('#setIn').value||7)};saveCfg();toast('تم حفظ الإعدادات')}
-function addRank(){if(!canW())return;const v=$('#newRank').value.trim();if(!v)return;S.cfg={...S.cfg,ranks:[...S.cfg.ranks,v]};saveCfg()}
-function rmRank(i){if(!canW())return;const r=[...S.cfg.ranks];r.splice(i,1);S.cfg={...S.cfg,ranks:r};saveCfg()}
+function addRank_(){if(!canW())return;const v=$('#newRank').value.trim();if(!v)return;S.cfg={...S.cfg,ranks:[...S.cfg.ranks,v]};saveCfg()}
+function rmRank_(i){if(!canW())return;const r=[...S.cfg.ranks];r.splice(i,1);S.cfg={...S.cfg,ranks:r};saveCfg()}
 function wtEdit(i,k,v){if(!canW())return;const w=S.cfg.workTypes.map(x=>({...x}));w[i][k]=v;S.cfg={...S.cfg,workTypes:w};saveCfg()}
 function wtRm(i){if(!canW())return;const w=[...S.cfg.workTypes];w.splice(i,1);S.cfg={...S.cfg,workTypes:w};saveCfg()}
 function wtAdd(){if(!canW())return;S.cfg={...S.cfg,workTypes:[...S.cfg.workTypes,{n:'نوع جديد',p:5}]};saveCfg()}
@@ -988,18 +986,17 @@ const opts=(o,sel)=>Object.entries(o).map(([k,[t]])=>`<option value="${k}" ${sel
 function askDel(col,id,what){if(!canW())return;openModal('تأكيد الحذف',`<p>هل أنت متأكد من حذف ${what}؟ لا يمكن التراجع عن هذا الإجراء.</p>${col==='members'?'<p class="dim mt" style="font-size:13px">ملاحظة: أعمال وإنذارات العضو تبقى في السجل باسم "عضو محذوف". يمكنك بدلاً من ذلك تغيير حالته إلى "مفصول".</p>':''}`,()=>{del(col,id);toast('تم الحذف');if(col==='members')closeModal()},'حذف نهائي')}
 
 function formMember(id){
-  if(!canW())return;const m=id?S.members[id]:{status:'active',joined:today(),role:'inspector',rank:S.cfg.ranks[S.cfg.ranks.length-1]};
+  if(!canW())return;const m=id?S.members[id]:{status:'active',joined:today(),role:'admin',rank:'الإدارة العليا'};
   openModal(id?'تعديل بيانات عضو':'إضافة عضو جديد',`<div class="form">
    ${fld('الاسم',`<input class="inp" name="name" required value="${esc(m.name||'')}" placeholder="اسم العضو في السيرفر">`,1,1)}
    ${fld('الرقم الوظيفي',`<input class="inp" name="badge" value="${esc(m.badge||'')}" placeholder="مثال: R-101">`)}
    ${fld('آيدي ديسكورد',`<input class="inp" name="discordId" value="${esc(m.discordId||'')}" placeholder="@user أو ID" style="direction:ltr;text-align:right">`)}
-   ${fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map(r=>`<option ${m.rank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
+   ${fld('الرتبة',`<input class="inp" value="${esc((ROLES[m.role]||ROLES.admin)[0])}" disabled>`)}
    ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
-   ${isSuper()&&m.role!=='super'?fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">${ROLES.inspector[0]}</option><option value="admin" ${m.role==='admin'?'selected':''}>${ROLES.admin[0]}</option></select>`):fld('الصلاحية',`<input class="inp" value="${(ROLES[m.role]||ROLES.inspector)[0]}" disabled>`)}
    ${fld('اسم المستخدم',`<input class="inp" value="${esc(m.username||'—')}${m.username&&!m.hasLogin?' (ما سجّل بعد)':''}" disabled>`)}
    ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;if(!o.role)delete o.role;const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;const nid=id||uid();const base=id?S.members[id]:{createdAt:Date.now(),role:'admin'};put('members',nid,{...base,...o,name:o.name.trim(),rank:(ROLES[base.role]||ROLES.admin)[0]});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
 }
 function formWork(id,preMember){
   if(!canW())return;const A=isAdmin();if(A&&!team().length){toast('أضف عضواً أولاً',true);location.hash='members';return}
