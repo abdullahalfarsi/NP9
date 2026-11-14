@@ -257,6 +257,8 @@ body.ro .w-only{display:none!important}
 .pend-ic{width:70px;height:70px;margin:18px auto 0;border-radius:50%;display:grid;place-items:center;background:#d4a24c18;color:var(--gold)}
 .pend-ic svg{width:36px;height:36px}
 body.insp .a-only{display:none!important}
+.code-tag{font-family:ui-monospace,Consolas,monospace;background:#0e0905;border:1px solid var(--line2);border-radius:8px;padding:3px 9px;letter-spacing:2px;color:var(--gold2);direction:ltr;display:inline-block}
+.login .code{letter-spacing:6px!important;font-size:24px!important}
 .av{position:relative;overflow:hidden}
 .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
 .login .btn.discord{background:#5865F2;border-color:#5865F2;color:#fff;font-size:15.5px;margin-top:22px}
@@ -358,10 +360,12 @@ const COLS=['members','works','warnings','leaves'];
 /* ضع بيانات مشروعك من Supabase → Project Settings → API */
 const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';       
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  
-const S={members:{},works:{},warnings:{},leaves:{},cfg:structuredClone(DEFAULT_CFG),board:null,boardKey:''};
+const S={members:{},works:{},warnings:{},leaves:{},invites:{},cfg:structuredClone(DEFAULT_CFG),board:null,boardKey:''};
 let SB=null,MODE='loading',READONLY=false,RT=null,pendTimer=null;
-let ME={role:'admin',memberId:null,userId:null,email:'',meta:{}};
-const isAdmin=()=>ME.role==='admin';
+let ME={role:'admin',memberId:null,userId:null};
+const isAdmin=()=>ME.role==='admin'||ME.role==='super';
+const isSuper=()=>ME.role==='super';
+const ROLES={super:['مسؤول الإدارة العليا','c-gold'],admin:['الإدارة العليا','c-violet'],inspector:['عضو رقابة','c-blue']};
 const LSK='np9-rqaba-v1';
 function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg};}}catch(e){}}
 function lsSave(){try{localStorage.setItem(LSK,JSON.stringify({members:S.members,works:S.works,warnings:S.warnings,leaves:S.leaves,cfg:S.cfg}))}catch(e){}}
@@ -415,103 +419,175 @@ async function loadBoard(){
   boardBusy=false;if(!error){S.board=data||[];S.boardKey=key;render()}
 }
 
-/* ---------- بوابة الدخول (ديسكورد) ---------- */
+/* ---------- بوابة الدخول (اسم مستخدم + كلمة مرور + أكواد تسجيل) ---------- */
 function gate(html){$('#gate').innerHTML=html;$('#login').classList.add('show')}
 function hideGate(){$('#login').classList.remove('show')}
 const gateHead=sub=>`<img src="${LOGO}" alt="NP9"><h1>NP9 | مود الشرطة</h1><div class="muted">${sub}</div>`;
 const gateOut=`<div class="glinks"><button type="button" class="lnk" onclick="doLogout()">تسجيل الخروج</button></div>`;
-function oauthError(){
-  const q=new URLSearchParams(location.search+'&'+location.hash.replace(/^#/,''));
-  const d=q.get('error_description')||q.get('error');
-  return d?decodeURIComponent(d.replace(/\+/g,' ')):'';
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtCode=c=>{c=normCode(c);return c.length>4?c.slice(0,4)+'-'+c.slice(4):c};
+async function ensureSession(){
+  const {data:{session}}=await SB.auth.getSession();if(session)return session;
+  const {data,error}=await SB.auth.signInAnonymously();
+  if(error)throw new Error(/anonymous/i.test(error.message)?'لازم تفعّل Allow anonymous sign-ins في Supabase':error.message);
+  return data.session;
 }
-function gateLoginStep(err){
-  gate(`${gateHead('نظام إدارة الرقابة والتفتيش')}
-   <p class="gtxt">سجّل دخولك بحساب الديسكورد اللي تستخدمه في السيرفر</p>
-   <button class="btn discord" type="button" id="dcBtn" onclick="loginDiscord()">${ic('user',2.2)} تسجيل الدخول بالديسكورد</button>
-   <div class="gerr" id="gerr">${err?'تعذّر الدخول: '+esc(err):''}</div>
-   <p class="dim" style="font-size:12px;margin-top:6px">بعد الدخول تكمل بياناتك وتنتظر موافقة مسؤول الرقابة والتفتيش.</p>`);
+function authErr(e){const m=(e?.message||'').toLowerCase();
+  if(m.includes('invalid login'))return 'اسم المستخدم أو كلمة المرور غير صحيحة';
+  if(m.includes('password')&&m.includes('6'))return 'كلمة المرور لازم تكون 6 أحرف أو أكثر';
+  if(m.includes('signups not allowed'))return 'التسجيل مقفل في Supabase — فعّل Allow new users to sign up';
+  if(m.includes('rate'))return 'محاولات كثيرة، انتظر شوي وحاول';
+  return e?.message||'حدث خطأ';}
+function btnBusy(b,on,txt){b.disabled=on;if(txt)b.textContent=txt}
+
+function gateLogin(err){
+  gate(`<form onsubmit="doLogin(event)">${gateHead('نظام إدارة الرقابة والتفتيش')}
+   <input class="inp" name="u" required placeholder="اسم المستخدم" autocomplete="username" style="margin-top:20px">
+   <input class="inp" name="p" type="password" required placeholder="كلمة المرور" autocomplete="current-password">
+   <button class="btn gold" type="submit">تسجيل الدخول</button><div class="gerr" id="gerr">${esc(err||'')}</div>
+   <div class="glinks"><span class="dim">أول مرة تدخل؟</span><button type="button" class="lnk" onclick="gateCode()">التسجيل بكود</button></div></form>`);
+  setTimeout(()=>$('#gate input')?.focus(),50);
 }
-async function loginDiscord(){
-  const b=$('#dcBtn');b.disabled=true;b.textContent='جاري التحويل للديسكورد…';
-  const {error}=await SB.auth.signInWithOAuth({provider:'discord',options:{redirectTo:location.origin+location.pathname}});
-  if(error){b.disabled=false;b.textContent='تسجيل الدخول بالديسكورد';$('#gerr').textContent='تعذّر الدخول: '+error.message}
+async function doLogin(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');$('#gerr').textContent='';
+  btnBusy(b,true,'جاري الدخول…');
+  try{
+    const session=await ensureSession();
+    const {data,error}=await SB.rpc('login',{p_username:f.u.value.trim(),p_password:f.p.value});
+    if(error)throw error;
+    if(!data?.ok){const M={locked:'محاولات خاطئة كثيرة — الحساب مقفل 10 دقائق',dismissed:'حسابك موقوف — تواصل مع الإدارة العليا'};
+      throw new Error(M[data?.msg]||'اسم المستخدم أو كلمة المرور غير صحيحة')}
+    afterAuth(session);
+  }catch(err){btnBusy(b,false,'تسجيل الدخول');$('#gerr').textContent=err.message||authErr(err)}
 }
-function dcMeta(){
-  const md=ME.meta||{};
-  const user=String(md.name||md.full_name||md.user_name||'').replace(/#0+$/,'');
-  return {user,display:md.custom_claims?.global_name||md.full_name||user,id:md.provider_id||md.sub||'',avatar:md.avatar_url||md.picture||''};
+let REG={};
+function gateCode(){
+  gate(`<form onsubmit="doCheckCode(event)">${gateHead('تسجيل حساب جديد')}
+   <p class="gtxt">اكتب اسم المستخدم وكود التسجيل اللي أعطاك إياه مسؤول الإدارة العليا</p>
+   <input class="inp" name="u" required placeholder="اسم المستخدم" autocomplete="username" value="${esc(REG.u||'')}">
+   <input class="inp code" name="c" required placeholder="XXXX-XXXX" maxlength="12" autocomplete="off">
+   <button class="btn gold" type="submit">متابعة</button><div class="gerr" id="gerr"></div>
+   <div class="glinks"><span class="dim">عندك حساب؟</span><button type="button" class="lnk" onclick="gateLogin()">تسجيل الدخول</button></div></form>`);
 }
-let authStarted=false;
+async function doCheckCode(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');$('#gerr').textContent='';
+  const u=f.u.value.trim(),c=normCode(f.c.value);if(c.length<8){$('#gerr').textContent='الكود 8 خانات';return}
+  btnBusy(b,true,'جاري التحقق…');
+  const {data,error}=await SB.rpc('check_invite',{p_code:c,p_username:u});
+  btnBusy(b,false,'متابعة');
+  if(error){$('#gerr').textContent=authErr(error);return}
+  if(!data||!data.length){$('#gerr').textContent='الكود غير صحيح، أو مستخدم من قبل، أو ما يطابق اسم المستخدم';return}
+  REG={u,c,role:data[0].role,rank:data[0].rank,relink:data[0].relink};gatePassword();
+}
+function gatePassword(setup){
+  const title=setup?'إعداد حساب مسؤول الإدارة العليا':`أهلاً ${esc(REG.u)}`;
+  gate(`<form onsubmit="doRegister(event,${setup?1:0})">${gateHead(title)}
+   ${setup?`<p class="gtxt">هذا أول تشغيل للنظام — سوّ حساب <b>مسؤول الإدارة العليا</b> (حسابك أنت)</p>
+     <input class="inp" name="u" required placeholder="اسم المستخدم" autocomplete="username">`
+    :`<div class="dc-card"><div class="av"><span>${esc(initials(REG.u))}</span></div><div><b>${esc(REG.u)}</b><small>${esc(ROLES[REG.role]?.[0]||'')}${REG.rank?' · '+esc(REG.rank):''}</small></div><span class="chip c-green right">الكود صحيح ✓</span></div>
+     <p class="gtxt">${REG.relink?'سوّ كلمة مرور جديدة لحسابك':'سوّ كلمة مرور لحسابك — بتدخل فيها كل مرة باسم المستخدم'}</p>`}
+   <input class="inp" name="p" type="password" required minlength="6" placeholder="كلمة المرور (6 أحرف أو أكثر)" autocomplete="new-password">
+   <input class="inp" name="p2" type="password" required minlength="6" placeholder="تأكيد كلمة المرور" autocomplete="new-password">
+   <button class="btn gold" type="submit">${setup?'إنشاء الحساب':'إنشاء الحساب والدخول'}</button><div class="gerr" id="gerr"></div>
+   ${setup?'':`<div class="glinks"><span></span><button type="button" class="lnk" onclick="gateCode()">رجوع</button></div>`}</form>`);
+  setTimeout(()=>$('#gate input')?.focus(),50);
+}
+async function doRegister(e,setup){
+  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');$('#gerr').textContent='';
+  if(f.p.value!==f.p2.value){$('#gerr').textContent='كلمتين المرور مو متطابقة';return}
+  if(f.p.value.length<6){$('#gerr').textContent='كلمة المرور لازم تكون 6 أحرف أو أكثر';return}
+  const username=setup?f.u.value.trim():REG.u;if(!username)return;
+  btnBusy(b,true,'جاري الإنشاء…');
+  try{
+    const session=await ensureSession();
+    const r=setup?await SB.rpc('bootstrap_super',{p_username:username,p_password:f.p.value})
+                 :await SB.rpc('redeem_invite',{p_code:REG.c,p_username:REG.u,p_password:f.p.value});
+    if(r.error)throw r.error;
+    REG={};afterAuth(session);
+  }catch(err){btnBusy(b,false,'إنشاء الحساب');$('#gerr').textContent=err.message||'حدث خطأ'}
+}
 async function afterAuth(session){
-  if(authStarted)return;authStarted=true;
-  ME.userId=session.user.id;ME.email=session.user.email||'';ME.meta=session.user.user_metadata||{};
-  if(/access_token|code=|error/.test(location.hash+location.search))history.replaceState(null,'',location.pathname);
+  ME.userId=session.user.id;
   setConn('cloud','جاري التحميل…');await loadCfg();await resolveMe();
 }
 async function resolveMe(){
-  const {data,error}=await SB.from('members').select('*').eq('user_id',ME.userId).maybeSingle();
-  if(error){gate(`${gateHead('حدث خطأ')}<p class="gerr">${esc(error.message)}</p>${gateOut}`);return}
-  if(!data){gateProfileStep();return}
+  const {data:mid}=await SB.rpc('whoami');
+  if(!mid){setConn('loading','بانتظار تسجيل الدخول');const {data:has}=await SB.rpc('has_super');if(has===false)gatePassword(true);else gateLogin(ME.memberId?'انتهت جلستك — سجّل دخولك من جديد':'');ME.memberId=null;return}
+  const {data,error}=await SB.from('members').select('*').eq('id',mid).maybeSingle();
+  if(error||!data){gate(`${gateHead('حدث خطأ')}<p class="gerr">${esc(error?.message||'تعذّر تحميل بياناتك')}</p>${gateOut}`);return}
   const m=fromRow(data);ME.memberId=data.id;ME.role=m.role||'inspector';S.members[data.id]=m;
-  if(m.status==='pending'){gatePending(m);return}
-  if(m.status==='dismissed'){clearInterval(pendTimer);gate(`${gateHead('تم إيقاف الوصول')}<p class="gtxt">حسابك غير مفعّل في فريق الرقابة والتفتيش. تواصل مع المسؤول.</p>${gateOut}`);return}
-  clearInterval(pendTimer);hideGate();enterApp();
-}
-function gateProfileStep(){
-  const ranks=S.cfg.ranks,d=dcMeta();
-  gate(`<form onsubmit="saveProfile(event)" class="wide">${gateHead('أكمل بياناتك الرقابية')}
-   <div class="dc-card">${avHTML({name:d.display,avatarUrl:d.avatar})}<div><b>${esc(d.display)}</b><small style="direction:ltr">@${esc(d.user)}</small></div><span class="chip c-green right">تم الدخول ✓</span></div>
-   <p class="gtxt" style="margin-top:12px">سجّل بياناتك عشان ينضاف ملفك لفريق الرقابة والتفتيش</p>
-   <div class="gform">
-    <label>الاسم في السيرفر <i>*</i><input class="inp" name="name" required placeholder="اسمك في الرول بلاي" value="${esc(d.display)}"></label>
-    <label>الرقم الوظيفي<input class="inp" name="badge" placeholder="إن وجد"></label>
-    <label class="full">الرتبة الحالية<select class="inp" name="rank">${ranks.map((r,i)=>`<option ${i===ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
-    <label class="full">نبذة / ملاحظات<textarea class="inp" name="notes" placeholder="خبرتك، أوقات تواجدك…"></textarea></label>
-   </div>
-   <button class="btn gold" type="submit">حفظ وإرسال</button><div class="gerr" id="gerr"></div>
-   ${gateOut}</form>`);
-}
-async function saveProfile(e){
-  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');const o=Object.fromEntries(new FormData(f));
-  if(!o.name.trim())return;b.disabled=true;b.textContent='جاري الحفظ…';const d=dcMeta();
-  const row=toRow(uid(),{...o,name:o.name.trim(),discordId:d.id,discordUser:d.user,avatarUrl:d.avatar,joined:today(),createdAt:Date.now()});
-  const {error}=await SB.from('members').insert(row);
-  if(error){b.disabled=false;b.textContent='حفظ وإرسال';$('#gerr').textContent='تعذّر الحفظ: '+error.message;return}
-  resolveMe();
-}
-function gatePending(m){
-  gate(`${gateHead('طلبك قيد المراجعة')}
-   <div class="pend-ic">${ic('clock',1.6)}</div>
-   <p class="gtxt">تم استلام بياناتك يا <b>${esc(m.name)}</b> ✓<br>بانتظار موافقة مسؤول الرقابة والتفتيش على انضمامك.<br><small class="dim">هذي الصفحة تتحدث تلقائياً أول ما ينقبل طلبك.</small></p>
-   <button class="btn" type="button" onclick="resolveMe()">تحديث</button>${gateOut}`);
-  clearInterval(pendTimer);pendTimer=setInterval(resolveMe,15000);
+  if(m.status==='dismissed'){gate(`${gateHead('تم إيقاف الوصول')}<p class="gtxt">حسابك غير مفعّل في فريق الرقابة والتفتيش. تواصل مع الإدارة العليا.</p>${gateOut}`);return}
+  hideGate();enterApp();
 }
 let appStarted=false;
 function enterApp(){
   document.body.classList.toggle('insp',!isAdmin());
+  document.body.classList.toggle('super',isSuper());
   const m=S.members[ME.memberId]||{};
-  $('#meBox').innerHTML=`<div class="person">${avHTML(m)}<div style="min-width:0"><b>${esc(m.name||'')}</b><small>${isAdmin()?'مسؤول النظام':esc(m.rank||'مفتش')}</small></div></div>`;
+  $('#meBox').innerHTML=`<div class="person">${avHTML(m)}<div style="min-width:0"><b>${esc(m.name||'')}</b><small>${esc(ROLES[ME.role]?.[0]||'')}</small></div></div>`;
   setConn('cloud');
-  if(!isAdmin()&&!['me','works','warnings','leaves','ranking','profile'].includes(page))location.hash='me';
+  if(!PAGES().some(p=>p[0]===location.hash.slice(1)))location.hash=PAGES()[0][0];
   route();
-  Promise.all([...COLS.map(loadTable),loadCfg()]).then(()=>{render();loadBoard()});
+  Promise.all([...COLS.map(loadTable),loadCfg(),isSuper()?loadTable('invites'):null]).then(()=>{render();loadBoard()});
   if(appStarted)return;appStarted=true;
   const timers={};
   RT=SB.channel('np9-live').on('postgres_changes',{event:'*',schema:'public'},p=>{
-    const t=p.table;clearTimeout(timers[t]);
-    timers[t]=setTimeout(async()=>{await(t==='config'?loadCfg():loadTable(t));render();if(t!=='config'&&t!=='members')loadBoard()},400);
+    const t=p.table;if(t==='invites'&&!isSuper())return;clearTimeout(timers[t]);
+    timers[t]=setTimeout(async()=>{await(t==='config'?loadCfg():loadTable(t));render();if(!['config','members','invites'].includes(t))loadBoard()},400);
   }).subscribe();
 }
 async function boot(){
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){lsLoad();ME.role='admin';setConn('local');render();return}
   SB=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   setConn('loading','بانتظار تسجيل الدخول');
-  SB.auth.onAuthStateChange((ev,session)=>{if(session&&ev==='SIGNED_IN')afterAuth(session)});
   const {data:{session}}=await SB.auth.getSession();
-  if(session)afterAuth(session);else gateLoginStep(oauthError());
+  if(session){afterAuth(session);return}
+  const {data:has,error}=await SB.rpc('has_super');
+  if(error){gateLogin('تعذّر الاتصال بقاعدة البيانات: '+error.message);return}
+  if(has===false)gatePassword(true);else gateLogin();
 }
-async function doLogout(){if(SB){await SB.auth.signOut();location.hash='';location.reload()}}
+async function doLogout(){if(SB){try{await SB.rpc('logout')}catch(e){}await SB.auth.signOut();location.hash='';location.reload()}}
+
+/* ---------- أكواد التسجيل (مسؤول الإدارة العليا) ---------- */
+function genCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=new Uint32Array(8);crypto.getRandomValues(r);return [...r].map(x=>A[x%A.length]).join('')}
+function inviteMsg(i){return `🔐 دعوة نظام الرقابة والتفتيش — NP9 | مود الشرطة
+اسم المستخدم: ${i.username}
+كود التسجيل: ${fmtCode(i.id)}
+الرابط: ${location.origin+location.pathname}
+
+ادخل الرابط ← "التسجيل بكود" ← اكتب اسم المستخدم والكود ← سوّ كلمة المرور.
+⚠️ الكود يُستخدم مرة وحدة فقط.`}
+function vInvites(){
+  const I=arr('invites').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const unused=I.filter(i=>!i.usedAt).length;
+  return `<div class="bar"><span class="muted">${I.length} كود · ${unused} غير مستخدم</span><button class="btn gold right" onclick="formInvite()">${ic('plus',2.4)} إصدار كود جديد</button></div>
+  ${I.length?`<div class="tbl-wrap"><table><thead><tr><th>اسم المستخدم</th><th>الصلاحية</th><th>الرتبة</th><th>الكود</th><th>الحالة</th><th>تاريخ الإصدار</th><th></th></tr></thead><tbody>
+  ${I.map(i=>`<tr><td><b>${esc(i.username)}</b>${i.memberId?'<div class="dim" style="font-size:12px">إعادة تعيين حساب</div>':''}</td><td>${chip(ROLES[i.role]||ROLES.inspector)}</td><td>${esc(i.rank||'—')}</td>
+   <td><code class="code-tag">${fmtCode(i.id)}</code></td>
+   <td>${i.usedAt?chip(['مستخدم ✓','c-green'])+`<div class="dim" style="font-size:12px">${fmtD(String(i.usedAt).slice(0,10))}</div>`:chip(['بانتظار التسجيل','c-amber'])}</td>
+   <td class="dim">${i.createdAt?ago(i.createdAt):'—'}</td>
+   <td class="actions">${i.usedAt?'':`<button class="btn sm" onclick="copyTxt(inviteMsg(S.invites['${i.id}']?{id:'${i.id}',...S.invites['${i.id}']}:{}))">${ic('copy')} نسخ الرسالة</button><button class="icon-btn del" title="إلغاء الكود" onclick="askDel('invites','${i.id}','هذا الكود')">${ic('trash')}</button>`}${i.usedAt?`<button class="icon-btn del" title="حذف من السجل" onclick="askDel('invites','${i.id}','هذا السجل')">${ic('trash')}</button>`:''}</td></tr>`).join('')}
+  </tbody></table></div>`:emptyBox('ما فيه أكواد','أصدر كود لكل شخص تبغى تضيفه — يكتب اسم المستخدم والكود مرة وحدة ويسوي كلمة مروره.','formInvite()','إصدار كود')}`;
+}
+function formInvite(memberId){
+  if(!isSuper()){toast('هذي الصلاحية لمسؤول الإدارة العليا فقط',true);return}
+  const m=memberId?S.members[memberId]:null;const code=genCode();
+  openModal(m?'إعادة تعيين حساب':'إصدار كود تسجيل',`<div class="form">
+   ${m&&m.hasLogin?`<div class="alert amber full">${ic('info')}<div>بيتم إلغاء كلمة مرور <b>${esc(m.name)}</b> الحالية ويطلع من كل الأجهزة، ويسجّل من جديد بالكود ويسوي كلمة مرور جديدة. بياناته وأعماله تبقى كما هي.</div></div>`:''}
+   ${fld('اسم المستخدم (المسمى)',`<input class="inp" name="username" required value="${esc(m?(m.username||m.name):'')}" placeholder="الاسم اللي بيدخل فيه">`,1,1)}
+   ${m?'':fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">${ROLES.inspector[0]}</option><option value="admin">${ROLES.admin[0]}</option></select>`)}
+   ${m?'':fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map((r,i)=>`<option ${i===S.cfg.ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
+   ${fld('كود التسجيل',`<input class="inp" value="${fmtCode(code)}" disabled style="font-family:ui-monospace,Consolas,monospace;font-size:20px;letter-spacing:4px;text-align:center;direction:ltr"><div class="hint">يتولّد تلقائياً — يُستخدم مرة وحدة فقط</div>`,1)}
+  </div>`,async fd=>{
+    const o=Object.fromEntries(fd);const u=o.username.trim();if(!u)return false;
+    const taken=arr('members').some(x=>x.id!==memberId&&(x.username||'').toLowerCase()===u.toLowerCase())||arr('invites').some(x=>!x.usedAt&&x.username.toLowerCase()===u.toLowerCase());
+    if(taken){toast('اسم المستخدم مستخدم أو له كود ما انستخدم',true);return false}
+    const inv={username:u,role:m?(m.role==='admin'?'admin':'inspector'):o.role,rank:m?m.rank:o.rank,memberId:memberId||'',createdAt:Date.now()};
+    if(m&&m.hasLogin){const {error}=await SB.rpc('reset_member_login',{p_member_id:memberId});if(error){toast(error.message,true);return false}S.members[memberId]={...m,hasLogin:false}}
+    await put('invites',code,inv);
+    setTimeout(()=>openModal('تم إصدار الكود ✓',`<p class="muted mb">أرسل هذي الرسالة للشخص (مثلاً في الديسكورد):</p><div class="pre">${esc(inviteMsg({id:code,...inv}))}</div><button class="btn gold mt" onclick="copyTxt(inviteMsg({id:'${code}',...S.invites['${code}']}))">${ic('copy')} نسخ الرسالة</button>`,null),50);
+  },'إصدار الكود');
+}
 
 /* ============ helpers ============ */
 function $(s){return document.querySelector(s)}
@@ -559,7 +635,7 @@ const PAGES_ADMIN=[
  ['warnings','الإنذارات','warn'],['leaves','الإجازات والغياب','leave'],['ranking','الترتيب والتقييم','trophy'],
  ['reports','التقارير','report'],['settings','الإعدادات','gear']];
 const PAGES_INSP=[['me','لوحتي','dash'],['works','أعمالي','work'],['warnings','إنذاراتي','warn'],['leaves','إجازاتي','leave'],['ranking','الترتيب','trophy'],['profile','ملفي','user']];
-const PAGES=()=>isAdmin()?PAGES_ADMIN:PAGES_INSP;
+const PAGES=()=>isSuper()&&MODE==='cloud'?[...PAGES_ADMIN.slice(0,2),['invites','أكواد التسجيل','shield'],...PAGES_ADMIN.slice(2),['profile','ملفي','user']]:isAdmin()?[...PAGES_ADMIN,['profile','ملفي','user']]:PAGES_INSP;
 let page='dashboard';
 function route(){const h=location.hash.slice(1);page=PAGES().some(p=>p[0]===h)?h:PAGES()[0][0];document.body.classList.remove('nav-open');render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
@@ -584,7 +660,7 @@ function render(keepFocus){
   const P=PAGES().find(p=>p[0]===page)||PAGES()[0];$('#title').textContent=P[1];
   $('#supName').textContent=S.cfg.supervisor?'المسؤول: '+S.cfg.supervisor:'';
   const v=$('#view');
-  v.innerHTML=({me:vMe,profile:vProfile,dashboard:vDash,members:vMembers,works:vWorks,warnings:vWarnings,leaves:vLeaves,ranking:vRanking,reports:vReports,settings:vSettings})[page]();
+  v.innerHTML=({invites:vInvites,me:vMe,profile:vProfile,dashboard:vDash,members:vMembers,works:vWorks,warnings:vWarnings,leaves:vLeaves,ranking:vRanking,reports:vReports,settings:vSettings})[page]();
   if(focusKeep){const e=document.getElementById(focusKeep.id);if(e){e.focus();try{e.setSelectionRange(focusKeep.pos,focusKeep.pos)}catch(_){}}}
 }
 
@@ -660,10 +736,10 @@ function vMembers(){
     <select class="inp" onchange="setF('mrank',this.value)"><option value="all">كل الرتب</option>${S.cfg.ranks.map(r=>`<option ${F.mrank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
     <button class="btn gold right w-only" onclick="formMember()">${ic('plus',2.4)} إضافة عضو</button>
   </div>
-  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>الديسكورد</th><th>الحساب</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
+  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>اسم المستخدم</th><th>الصلاحية</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
   ${M.map(m=>{const s=statsFor(m.id,f0,f1);const st=isOnLeave(m.id)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
-   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${m.discordUser?'@'+esc(m.discordUser):esc(m.discordId||'—')}</td><td>${m.role==='admin'?chip(['مسؤول','c-gold']):m.userId?chip(['مرتبط بالديسكورد','c-blue']):'<span class="dim">بدون حساب</span>'}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
-   <td class="actions" onclick="event.stopPropagation()"><button class="icon-btn" title="الملف" onclick="openProfile('${m.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('members','${m.id}','العضو ${esc(m.name)}')">${ic('trash')}</button></td></tr>`}).join('')}
+   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td>${m.username&&m.hasLogin?esc(m.username):m.username?esc(m.username)+' <span class="chip c-amber">بدون كلمة مرور</span>':'<span class="dim">بدون حساب</span>'}</td><td>${chip(ROLES[m.role]||ROLES.inspector)}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
+   <td class="actions" onclick="event.stopPropagation()"><button class="icon-btn" title="الملف" onclick="openProfile('${m.id}')">${ic('eye')}</button>${isSuper()&&m.role!=='super'?`<button class="icon-btn" title="${m.hasLogin?'إعادة تعيين الحساب / كلمة المرور':'إصدار كود دخول'}" onclick="formInvite('${m.id}')">${ic('shield')}</button>`:''}${m.role==='super'&&!isSuper()?'':`<button class="icon-btn w-only" title="تعديل" onclick="formMember('${m.id}')">${ic('edit')}</button>`}${m.role==='super'?'':`<button class="icon-btn del w-only" title="حذف" onclick="askDel('members','${m.id}','العضو ${esc(m.name)}')">${ic('trash')}</button>`}</td></tr>`}).join('')}
   </tbody></table></div>`:emptyBox('لا يوجد أعضاء','أضف أعضاء فريق الرقابة والتفتيش لبدء المتابعة.','formMember()','إضافة عضو')}`;
 }
 function emptyBox(t,d,fn,b){return `<div class="card empty"><img src="${LOGO}" alt=""><div class="big">${t}</div><p class="mb">${d}</p>${fn?`<button class="btn gold w-only" onclick="${fn}">${ic('plus',2.4)} ${b}</button>`:''}</div>`}
@@ -789,19 +865,29 @@ function vMe(){
 }
 function vProfile(){
   const m=S.members[ME.memberId];if(!m)return '';
-  return `<div class="card" style="max-width:720px"><div class="prof-head">${avHTML(m,'lg')}<div><h2>${esc(m.name)}</h2><div class="dim" style="direction:ltr;text-align:right">@${esc(m.discordUser||dcMeta().user)}</div></div></div>
+  return `<div class="grid g2" style="max-width:1100px"><div class="card"><div class="prof-head">${avHTML(m,'lg')}<div><h2>${esc(m.name)}</h2><div class="flex">${chip(ROLES[ME.role]||ROLES.inspector)}<span class="dim">@${esc(m.username||'')}</span></div></div></div>
   <form onsubmit="saveMyProfile(event)"><div class="form">
-   ${fld('الاسم في السيرفر',`<input class="inp" name="name" required value="${esc(m.name||'')}">`,0,1)}
-   ${fld('حساب الديسكورد',`<input class="inp" value="@${esc(m.discordUser||'')}" disabled style="direction:ltr;text-align:right">`)}
+   ${fld('الاسم الظاهر',`<input class="inp" name="name" required value="${esc(m.name||'')}">`,0,1)}
+   ${fld('يوزر الديسكورد',`<input class="inp" name="discordUser" value="${esc(m.discordUser||'')}" style="direction:ltr;text-align:right" placeholder="اختياري">`)}
+   ${fld('اسم المستخدم (للدخول)',`<input class="inp" value="${esc(m.username||'—')}" disabled>`)}
    ${fld('الرتبة',`<input class="inp" value="${esc(m.rank||'—')}" disabled>`)}
    ${fld('الرقم الوظيفي',`<input class="inp" value="${esc(m.badge||'—')}" disabled>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" value="${fmtD(m.joined)}" disabled>`)}
-   ${fld('الحالة',`<input class="inp" value="${(STATUS[m.status]||STATUS.active)[0]}" disabled>`)}
-  </div><div class="hint mt">الرتبة والرقم الوظيفي والحالة يحددها مسؤول الرقابة والتفتيش.</div>
-  <div class="flex mt"><button class="btn gold" type="submit">${ic('check')} حفظ التعديلات</button><button class="btn" type="button" onclick="doLogout()">تسجيل الخروج</button></div></form></div>`;
+  </div>${isAdmin()?'':'<div class="hint mt">الرتبة والرقم الوظيفي والحالة تحددها الإدارة العليا.</div>'}
+  <div class="flex mt"><button class="btn gold" type="submit">${ic('check')} حفظ</button><button class="btn" type="button" onclick="doLogout()">تسجيل الخروج</button></div></form></div>
+  <div class="card"><h3>${ic('shield')} تغيير كلمة المرور</h3>
+  <form onsubmit="changePass(event)"><div class="form">
+   ${fld('كلمة المرور الحالية',`<input class="inp" type="password" name="old" required autocomplete="current-password" style="direction:ltr">`,1)}
+   ${fld('كلمة المرور الجديدة',`<input class="inp" type="password" name="p" minlength="6" required autocomplete="new-password" style="direction:ltr">`,1)}
+   ${fld('تأكيد كلمة المرور',`<input class="inp" type="password" name="p2" minlength="6" required autocomplete="new-password" style="direction:ltr">`,1)}
+  </div><button class="btn gold mt" type="submit">${ic('check')} تغيير كلمة المرور</button></form>
+  <div class="hint mt">نسيت كلمة المرور؟ اطلب من مسؤول الإدارة العليا يعيد تعيين حسابك بكود جديد.</div></div></div>`;
 }
 function saveMyProfile(e){e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const m=S.members[ME.memberId];
-  put('members',ME.memberId,{...m,name:o.name.trim()});toast('تم حفظ بياناتك ✓')}
+  put('members',ME.memberId,{...m,name:o.name.trim(),discordUser:o.discordUser.trim()});toast('تم حفظ بياناتك ✓')}
+async function changePass(e){e.preventDefault();const f=e.target;if(f.p.value!==f.p2.value){toast('كلمتين المرور مو متطابقة',true);return}
+  if(MODE!=='cloud'){toast('متاح بعد ربط Supabase',true);return}
+  const {error}=await SB.rpc('change_password',{p_old:f.old.value,p_new:f.p.value});if(error){toast(error.message,true);return}f.reset();toast('تم تغيير كلمة المرور ✓')}
 function approveMember(id){put('members',id,{...S.members[id],status:'active',joined:S.members[id].joined||today()});toast('تم قبول العضو ✓')}
 function rejectMember(id){openModal('رفض طلب الانضمام',`<p>رفض طلب <b>${esc(S.members[id].name)}</b>؟ ما راح يقدر يدخل النظام.</p>`,()=>{put('members',id,{...S.members[id],status:'dismissed'});toast('تم رفض الطلب')},'رفض الطلب')}
 
@@ -902,7 +988,7 @@ const opts=(o,sel)=>Object.entries(o).map(([k,[t]])=>`<option value="${k}" ${sel
 function askDel(col,id,what){if(!canW())return;openModal('تأكيد الحذف',`<p>هل أنت متأكد من حذف ${what}؟ لا يمكن التراجع عن هذا الإجراء.</p>${col==='members'?'<p class="dim mt" style="font-size:13px">ملاحظة: أعمال وإنذارات العضو تبقى في السجل باسم "عضو محذوف". يمكنك بدلاً من ذلك تغيير حالته إلى "مفصول".</p>':''}`,()=>{del(col,id);toast('تم الحذف');if(col==='members')closeModal()},'حذف نهائي')}
 
 function formMember(id){
-  if(!canW())return;const m=id?S.members[id]:{status:'active',joined:today(),rank:S.cfg.ranks[S.cfg.ranks.length-1]};
+  if(!canW())return;const m=id?S.members[id]:{status:'active',joined:today(),role:'inspector',rank:S.cfg.ranks[S.cfg.ranks.length-1]};
   openModal(id?'تعديل بيانات عضو':'إضافة عضو جديد',`<div class="form">
    ${fld('الاسم',`<input class="inp" name="name" required value="${esc(m.name||'')}" placeholder="اسم العضو في السيرفر">`,1,1)}
    ${fld('الرقم الوظيفي',`<input class="inp" name="badge" value="${esc(m.badge||'')}" placeholder="مثال: R-101">`)}
@@ -910,10 +996,10 @@ function formMember(id){
    ${fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map(r=>`<option ${m.rank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
    ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
-   ${fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">مفتش</option><option value="admin" ${m.role==='admin'?'selected':''}>مسؤول (صلاحيات كاملة)</option></select>`)}
-   ${fld('حساب الديسكورد',`<input class="inp" value="${m.userId?'@'+esc(m.discordUser||''):'لم يسجّل دخول بعد'}" disabled style="direction:ltr;text-align:right">`)}
+   ${isSuper()&&m.role!=='super'?fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">${ROLES.inspector[0]}</option><option value="admin" ${m.role==='admin'?'selected':''}>${ROLES.admin[0]}</option></select>`):fld('الصلاحية',`<input class="inp" value="${(ROLES[m.role]||ROLES.inspector)[0]}" disabled>`)}
+   ${fld('اسم المستخدم',`<input class="inp" value="${esc(m.username||'—')}${m.username&&!m.hasLogin?' (ما سجّل بعد)':''}" disabled>`)}
    ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;if(id===ME.memberId&&o.role!=='admin'&&MODE==='cloud'){toast('ما تقدر تشيل صلاحية المسؤول عن نفسك',true);return false}const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;if(!o.role)delete o.role;const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
 }
 function formWork(id,preMember){
   if(!canW())return;const A=isAdmin();if(A&&!team().length){toast('أضف عضواً أولاً',true);location.hash='members';return}
