@@ -575,13 +575,13 @@ function formInvite(memberId){
   openModal(m?'إعادة تعيين حساب':'إصدار كود تسجيل',`<div class="form">
    ${m&&m.hasLogin?`<div class="alert amber full">${ic('info')}<div>بيتم إلغاء كلمة مرور <b>${esc(m.name)}</b> الحالية ويطلع من كل الأجهزة، ويسجّل من جديد بالكود ويسوي كلمة مرور جديدة. بياناته وأعماله تبقى كما هي.</div></div>`:''}
    ${fld('اسم المستخدم (المسمى)',`<input class="inp" name="username" required value="${esc(m?(m.username||m.name):'')}" placeholder="الاسم اللي بيدخل فيه">`,1,1)}
-   ${fld('الرتبة / الصلاحية',`<input class="inp" value="الإدارة العليا" disabled>`,1)}
+   ${m?fld('الرتبة / الصلاحية',`<input class="inp" value="${esc((ROLES[m.role]||ROLES.admin)[0])}" disabled>`,1):fld('الرتبة / الصلاحية',`<select class="inp" name="role"><option value="admin">${ROLES.admin[0]}</option><option value="super">${ROLES.super[0]}</option></select><div class="hint">مسؤول الإدارة العليا: صلاحيات كاملة + إصدار الأكواد</div>`,1)}
    ${fld('كود التسجيل',`<input class="inp" value="${fmtCode(code)}" disabled style="font-family:ui-monospace,Consolas,monospace;font-size:20px;letter-spacing:4px;text-align:center;direction:ltr"><div class="hint">يتولّد تلقائياً — يُستخدم مرة وحدة فقط</div>`,1)}
   </div>`,async fd=>{
     const o=Object.fromEntries(fd);const u=o.username.trim();if(!u)return false;
     const taken=arr('members').some(x=>x.id!==memberId&&(x.username||'').toLowerCase()===u.toLowerCase())||arr('invites').some(x=>!x.usedAt&&x.username.toLowerCase()===u.toLowerCase());
     if(taken){toast('اسم المستخدم مستخدم أو له كود ما انستخدم',true);return false}
-    const inv={username:u,role:'admin',rank:'الإدارة العليا',memberId:memberId||'',createdAt:Date.now()};
+    const role=m?(m.role==='super'?'super':'admin'):(o.role==='super'?'super':'admin');const inv={username:u,role,rank:ROLES[role][0],memberId:memberId||'',createdAt:Date.now()};
     if(m&&m.hasLogin){const {error}=await SB.rpc('reset_member_login',{p_member_id:memberId});if(error){toast(error.message,true);return false}S.members[memberId]={...m,hasLogin:false}}
     await put('invites',code,inv);
     setTimeout(()=>openModal('تم إصدار الكود ✓',`<p class="muted mb">أرسل هذي الرسالة للشخص (مثلاً في الديسكورد):</p><div class="pre">${esc(inviteMsg({id:code,...inv}))}</div><button class="btn gold mt" onclick="copyTxt(inviteMsg({id:'${code}',...S.invites['${code}']}))">${ic('copy')} نسخ الرسالة</button>`,null),50);
@@ -991,12 +991,12 @@ function formMember(id){
    ${fld('الاسم',`<input class="inp" name="name" required value="${esc(m.name||'')}" placeholder="اسم العضو في السيرفر">`,1,1)}
    ${fld('الرقم الوظيفي',`<input class="inp" name="badge" value="${esc(m.badge||'')}" placeholder="مثال: R-101">`)}
    ${fld('آيدي ديسكورد',`<input class="inp" name="discordId" value="${esc(m.discordId||'')}" placeholder="@user أو ID" style="direction:ltr;text-align:right">`)}
-   ${fld('الرتبة',`<input class="inp" value="${esc((ROLES[m.role]||ROLES.admin)[0])}" disabled>`)}
+   ${isSuper()&&m.role!=='super'?fld('الرتبة',`<select class="inp" name="role"><option value="admin">${ROLES.admin[0]}</option><option value="super">${ROLES.super[0]}</option></select>`):fld('الرتبة',`<input class="inp" value="${esc((ROLES[m.role]||ROLES.admin)[0])}" disabled>`)}
    ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
    ${fld('اسم المستخدم',`<input class="inp" value="${esc(m.username||'—')}${m.username&&!m.hasLogin?' (ما سجّل بعد)':''}" disabled>`)}
    ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
-  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;const nid=id||uid();const base=id?S.members[id]:{createdAt:Date.now(),role:'admin'};put('members',nid,{...base,...o,name:o.name.trim(),rank:(ROLES[base.role]||ROLES.admin)[0]});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;const nid=id||uid();const base=id?S.members[id]:{createdAt:Date.now(),role:'admin'};const role=base.role==='super'?'super':(o.role==='super'?'super':'admin');delete o.role;put('members',nid,{...base,...o,role,name:o.name.trim(),rank:ROLES[role][0]});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
 }
 function formWork(id,preMember){
   if(!canW())return;const A=isAdmin();if(A&&!team().length){toast('أضف عضواً أولاً',true);location.hash='members';return}
