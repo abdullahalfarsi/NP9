@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NP9 | إدارة الرقابة والتفتيش</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090604;--bg2:#0f0a06;--panel:#140e08;--panel2:#1b130b;--panel3:#231910;
+  --line:#33251450;--line2:#4a3519;--gold:#d4a24c;--gold2:#f1cf86;--gold3:#a8711f;--bronze:#7a4c16;
+  --text:#f4ead8;--muted:#a8957a;--dim:#6f604c;
+  --red:#e0574f;--red-bg:#3a1512;--green:#5cc489;--green-bg:#10301e;--blue:#6aa8e6;--blue-bg:#122637;
+  --amber:#f0a83a;--amber-bg:#3a2810;--violet:#b98ae8;--violet-bg:#2a1a3a;
+  --r:14px;--shadow:0 10px 40px -12px #000c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Tajawal,Cairo,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;
+  background-image:radial-gradient(900px 500px at 85% -10%,#c8862a22,transparent 60%),radial-gradient(700px 500px at 0% 110%,#7a4c1622,transparent 60%);
+  background-attachment:fixed}
+h1,h2,h3,h4,.cairo{font-family:Cairo,Tajawal,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--gold2)}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#3a2a17;border-radius:10px}::-webkit-scrollbar-track{background:transparent}
+
+/* layout */
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,#120c07,#0b0705);border-left:1px solid var(--line2);display:flex;flex-direction:column;padding:22px 16px;gap:6px;z-index:30}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:6px 0 18px;border-bottom:1px solid var(--line2);margin-bottom:10px}
+.brand img{width:108px;height:108px;border-radius:50%;box-shadow:0 0 0 3px #d4a24c55,0 0 40px #d4a24c40}
+.brand h1{font-size:19px;font-weight:900;letter-spacing:.5px;background:linear-gradient(180deg,var(--gold2),var(--gold) 60%,var(--gold3));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.3}
+.brand small{color:var(--muted);font-size:12.5px}
+.nav{display:flex;flex-direction:column;gap:3px;overflow:auto;flex:1}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;color:var(--muted);text-decoration:none;font-weight:600;font-family:Cairo;font-size:14.5px;transition:.15s;position:relative}
+.nav a svg{width:19px;height:19px;flex:none;opacity:.85}
+.nav a:hover{background:#ffffff08;color:var(--text)}
+.nav a.on{background:linear-gradient(90deg,#d4a24c10,#d4a24c26);color:var(--gold2);box-shadow:inset -3px 0 0 var(--gold)}
+.nav .badge{margin-inline-start:auto;background:var(--red);color:#fff;font-size:11px;border-radius:20px;padding:0 7px;line-height:19px;font-weight:700}
+.side-foot{border-top:1px solid var(--line2);padding-top:12px;font-size:12px;color:var(--dim);display:flex;flex-direction:column;gap:6px}
+.conn{display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.ok{background:var(--green);box-shadow:0 0 8px var(--green)}.dot.local{background:var(--amber)}
+
+.main{min-width:0;overflow-x:hidden;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:16px 28px;background:#090604cc;backdrop-filter:blur(12px);border-bottom:1px solid var(--line2)}
+.top h2{font-size:22px;font-weight:800}
+.top .sub{color:var(--muted);font-size:13px}
+.top .sp{flex:1}
+.menu-btn{display:none}
+.view{padding:26px 28px 60px;max-width:1500px;width:100%}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--panel2);padding:9px 16px;border-radius:11px;cursor:pointer;font-weight:700;font-family:Cairo;font-size:14px;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--gold3);background:var(--panel3)}
+.btn svg{width:17px;height:17px}
+.btn.gold{background:linear-gradient(180deg,#e6b45c,#b67a22);color:#1a0f04;border-color:#e6b45c}
+.btn.gold:hover{filter:brightness(1.08)}
+.btn.red{background:var(--red-bg);border-color:#6a2420;color:#ffb3ad}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:9px}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:#ffffff0a}
+.icon-btn{width:34px;height:34px;display:inline-grid;place-items:center;border-radius:9px;border:1px solid transparent;background:transparent;cursor:pointer;color:var(--muted)}
+.icon-btn:hover{background:#ffffff0c;color:var(--text);border-color:var(--line2)}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn.del:hover{color:var(--red)}
+
+/* cards */
+.grid{display:grid;gap:16px}.grid>*{min-width:0}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1.4fr 1fr}
+.card{background:linear-gradient(180deg,var(--panel),#100b06);border:1px solid var(--line2);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card h3{font-size:16px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3 svg{width:19px;height:19px;flex:none;color:var(--gold)}
+.card h3 .muted{font-weight:500;font-size:12.5px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-head h3{margin:0}
+.stat{position:relative;overflow:hidden}
+.stat .k{color:var(--muted);font-size:13.5px;font-weight:600}
+.stat .v{font-family:Cairo;font-size:34px;font-weight:900;line-height:1.2;margin-top:4px;color:var(--gold2)}
+.stat .s{font-size:12.5px;color:var(--dim)}
+.stat .ic{position:absolute;left:14px;top:14px;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#d4a24c18;color:var(--gold)}
+.stat .ic svg{width:22px;height:22px}
+.stat.red .v{color:#ff9a92}.stat.red .ic{background:var(--red-bg);color:var(--red)}
+.stat.green .v{color:#9be3b8}.stat.green .ic{background:var(--green-bg);color:var(--green)}
+.stat.blue .v{color:#a9cff5}.stat.blue .ic{background:var(--blue-bg);color:var(--blue)}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+
+/* tables */
+.tbl-wrap{overflow:auto;border-radius:12px;border:1px solid var(--line2)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:right;font-family:Cairo;font-weight:700;color:var(--muted);font-size:12.5px;background:#1a120a;padding:11px 14px;border-bottom:1px solid var(--line2);white-space:nowrap;position:sticky;top:0}
+td{padding:11px 14px;border-bottom:1px solid #2a1e1180;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:.12s}
+tbody tr:hover{background:#d4a24c08}
+td.actions{white-space:nowrap;text-align:left;width:1%}
+.clickable{cursor:pointer}
+
+.person{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:Cairo;font-weight:800;font-size:14px;color:#1a0f04;background:linear-gradient(135deg,var(--gold2),var(--gold3))}
+.av.lg{width:74px;height:74px;font-size:28px;box-shadow:0 0 0 3px #d4a24c40}
+.person b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person small{color:var(--dim);font-size:12px;display:block}
+
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid;white-space:nowrap;line-height:20px}
+.c-green{color:var(--green);background:var(--green-bg);border-color:#1f5a38}
+.c-red{color:#ff9a92;background:var(--red-bg);border-color:#6a2420}
+.c-amber{color:var(--amber);background:var(--amber-bg);border-color:#6a4a18}
+.c-blue{color:var(--blue);background:var(--blue-bg);border-color:#204868}
+.c-violet{color:var(--violet);background:var(--violet-bg);border-color:#4a2f66}
+.c-gray{color:var(--muted);background:#1c1610;border-color:#3a2d1e}
+.c-gold{color:var(--gold2);background:#2a1d0c;border-color:#5a3f17}
+
+/* filters */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.inp,select.inp,textarea.inp{background:#0e0905;border:1px solid var(--line2);border-radius:10px;padding:9px 12px;outline:none;min-width:0;transition:.15s}
+.inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px #d4a24c22}
+select.inp{cursor:pointer}
+.search{position:relative;flex:1;min-width:200px;max-width:360px}
+.search .inp{width:100%;padding-inline-start:36px}
+.search svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--dim)}
+.seg{display:inline-flex;background:#0e0905;border:1px solid var(--line2);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:700;font-family:Cairo;font-size:13px}
+.seg button.on{background:var(--panel3);color:var(--gold2)}
+
+/* lists */
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid #2a1e1180}
+.li:last-child{border-bottom:0}
+.li .grow{flex:1;min-width:0}
+.li .t{font-weight:700;font-size:14px}
+.li .d{color:var(--dim);font-size:12.5px}
+.ico-dot{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none}
+.ico-dot svg{width:17px;height:17px}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.empty .big{font-family:Cairo;font-weight:800;font-size:17px;color:var(--text);margin-bottom:6px}
+.empty img{width:70px;opacity:.5;border-radius:50%;margin-bottom:10px;filter:grayscale(.3)}
+
+.alert{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid;margin-bottom:9px;font-size:14px}
+.alert svg{width:19px;height:19px;flex:none;margin-top:2px}
+.alert.red{background:#2a0f0d;border-color:#5a221d;color:#ffc2bc}
+.alert.amber{background:#2a1d0a;border-color:#5a3f17;color:#f8d79a}
+.alert.blue{background:#0f1d2a;border-color:#204868;color:#bcdcf8}
+.alert b{color:#fff}
+
+/* charts */
+.bars{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:10px}
+.bars .col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars .b{width:100%;max-width:34px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--gold2),var(--gold3));min-height:3px;position:relative;transition:.3s}
+.bars .b:hover::after{content:attr(data-v);position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:#000;padding:1px 7px;border-radius:6px;font-size:11px;white-space:nowrap}
+.bars .l{font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;max-width:100%}
+.hbar{display:grid;grid-template-columns:120px 1fr 34px;gap:10px;align-items:center;margin-bottom:9px;font-size:13px}
+.hbar .tr{height:10px;background:#21170d;border-radius:10px;overflow:hidden}
+.hbar .fl{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--gold3),var(--gold2))}
+.hbar .n{text-align:left;font-weight:700;color:var(--gold2)}
+
+/* podium */
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;align-items:end;margin-bottom:22px}
+.pod{text-align:center;padding:20px 14px;border-radius:16px;border:1px solid var(--line2);background:linear-gradient(180deg,#1d140b,#110b06);position:relative}
+.pod .medal{font-family:Cairo;font-weight:900;font-size:13px;position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:2px 14px;border-radius:20px}
+.pod.p1{padding-top:30px;border-color:#a8711f;box-shadow:0 0 40px -10px #d4a24c80}
+.pod.p1 .medal{background:linear-gradient(180deg,#f1cf86,#c58b2e);color:#1a0f04}
+.pod.p2 .medal{background:#c9c9c9;color:#111}.pod.p3 .medal{background:#b8743a;color:#1a0f04}
+.pod .av{margin:0 auto 10px}
+.pod .sc{font-family:Cairo;font-weight:900;font-size:26px;color:var(--gold2)}
+
+/* modal */
+.ov{position:fixed;inset:0;background:#000b;backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
+.ov.show{display:flex;animation:fade .15s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{background:linear-gradient(180deg,#1a120a,#120c07);border:1px solid #5a3f17;border-radius:18px;width:100%;max-width:620px;box-shadow:0 30px 80px #000;animation:pop .18s}
+.modal.wide{max-width:980px}
+@keyframes pop{from{transform:translateY(10px) scale(.98)}to{transform:none}}
+.m-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line2)}
+.m-head h3{font-size:18px;font-weight:800;flex:1}
+.m-body{padding:20px}
+.m-foot{display:flex;gap:10px;justify-content:flex-start;padding:14px 20px;border-top:1px solid var(--line2)}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form .full{grid-column:1/-1}
+.fld label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;font-family:Cairo}
+.fld label i{color:var(--red);font-style:normal}
+.fld .inp{width:100%}
+textarea.inp{resize:vertical;min-height:80px}
+.hint{font-size:12px;color:var(--dim);margin-top:4px}
+
+/* profile */
+.prof-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.prof-head h2{font-size:24px;font-weight:900}
+.mini-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.mini{background:#0e0905;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;text-align:center}
+.mini b{display:block;font-family:Cairo;font-size:22px;font-weight:900;color:var(--gold2)}
+.mini span{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line2);margin-bottom:14px;overflow:auto}
+.tabs button{background:none;border:0;padding:9px 14px;cursor:pointer;color:var(--muted);font-weight:700;font-family:Cairo;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button.on{color:var(--gold2);border-color:var(--gold)}
+.timeline{position:relative;padding-right:22px}
+.timeline::before{content:"";position:absolute;right:7px;top:4px;bottom:4px;width:2px;background:#3a2a17}
+.tl{position:relative;padding:4px 0 14px}
+.tl::before{content:"";position:absolute;right:-20px;top:9px;width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px #140e08}
+.tl.red::before{background:var(--red)}.tl.blue::before{background:var(--blue)}.tl.green::before{background:var(--green)}
+
+.toast-wrap{position:fixed;bottom:20px;left:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:#1f160c;border:1px solid #5a3f17;border-radius:12px;padding:11px 16px;box-shadow:var(--shadow);font-weight:600;animation:pop .2s;max-width:360px}
+.toast.err{border-color:#6a2420;background:#2a0f0d}
+
+.pre{background:#0b0704;border:1px solid var(--line2);border-radius:12px;padding:14px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:13px;max-height:380px;overflow:auto;direction:rtl;text-align:right}
+.score{font-family:Cairo;font-weight:900;color:var(--gold2)}
+.rank-n{font-family:Cairo;font-weight:900;width:30px;text-align:center;color:var(--dim)}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag-item{display:flex;align-items:center;gap:6px;background:#0e0905;border:1px solid var(--line2);border-radius:10px;padding:5px 6px 5px 12px}
+.tag-item input{background:transparent;border:0;outline:0;width:auto}
+.ro-note{display:none}
+body.ro .ro-note{display:flex}
+body.ro .w-only{display:none!important}
+.mt{margin-top:16px}.mb{margin-bottom:16px}
+.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.right{margin-inline-start:auto}
+
+@media (max-width:1200px){.g4{grid-template-columns:repeat(2,1fr)}.g2,.g3{grid-template-columns:1fr}.mini-stats{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;right:0;top:0;width:270px;transform:translateX(100%);transition:.25s}
+  body.nav-open .side{transform:none;box-shadow:-20px 0 60px #000}
+  .menu-btn{display:inline-grid}
+  .top{padding:12px 16px}.view{padding:18px 14px 50px}
+  .form{grid-template-columns:1fr}
+  .podium{grid-template-columns:1fr}.pod.p1{order:-1}
+  .mini-stats{grid-template-columns:repeat(2,1fr)}
+  .top .sub{display:none}
+  .top h2{font-size:18px}
+  .top .btn span{display:none}
+  .bars .col:nth-child(odd) .l{visibility:hidden}
+  .hbar{grid-template-columns:90px 1fr 28px}
+}
+@media (max-width:520px){.g4{grid-template-columns:1fr}}
+.login{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px;
+  background-image:radial-gradient(700px 400px at 50% 0%,#c8862a30,transparent 70%)}
+.login.show{display:flex}
+.login form{width:100%;max-width:380px;text-align:center;background:linear-gradient(180deg,#1a120a,#120c07);border:1px solid #5a3f17;border-radius:20px;padding:30px 26px;box-shadow:0 30px 80px #000}
+.login img{width:120px;height:120px;border-radius:50%;box-shadow:0 0 0 3px #d4a24c55,0 0 50px #d4a24c50;margin-bottom:14px}
+.login h1{font-size:22px;font-weight:900;color:var(--gold2)}
+.login .inp{width:100%;margin-top:12px;text-align:right}
+.login .btn{width:100%;justify-content:center;margin-top:18px;padding:12px}
+#loginErr{color:var(--red);font-size:13px;min-height:20px;margin-top:8px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <img src="data:image/webp;base64,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" alt="شعار NP9">
+      <div>
+        <h1>NP9 | مود الشرطة</h1>
+        <small>إدارة الرقابة والتفتيش</small>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">جاري الاتصال…</span></div>
+      <div id="supName"></div>
+      <button class="btn sm" id="logoutBtn" style="display:none" onclick="doLogout()">تسجيل الخروج</button>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <button class="icon-btn menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div>
+        <h2 id="title">لوحة القيادة</h2>
+        <div class="sub" id="today"></div>
+      </div>
+      <div class="sp"></div>
+      <div class="flex w-only">
+        <button class="btn" onclick="formWarning()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>إنذار</span></button>
+        <button class="btn gold" onclick="formWork()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg><span>تسجيل عمل</span></button>
+      </div>
+    </header>
+    <div class="view">
+      <div class="alert amber ro-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><div>وضع العرض فقط — يمكنك الاطلاع على البيانات لكن لا يمكنك التعديل.</div></div>
+      <div id="view"></div>
+    </div>
+  </div>
+</div>
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast-wrap" id="toasts"></div>
+<div class="login" id="login"><form onsubmit="doLogin(event)">
+  <img src="data:image/webp;base64,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" alt="NP9">
+  <h1>NP9 | مود الشرطة</h1>
+  <div class="muted">نظام إدارة الرقابة والتفتيش</div>
+  <input class="inp" name="email" type="email" placeholder="البريد الإلكتروني" required style="direction:ltr">
+  <input class="inp" name="password" type="password" placeholder="كلمة المرور" required style="direction:ltr">
+  <button class="btn gold" type="submit">تسجيل الدخول</button>
+  <div id="loginErr"></div>
+</form></div>
+
+<script>
+const LOGO=document.querySelector('.brand img').src;
+/* ============ icons ============ */
+const I={
+ dash:'<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+ work:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+ warn:'<path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+ leave:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+ report:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+ edit:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ star:'<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+ info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/>'
+};
+const ic=(n,w=2)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+
+/* ============ constants ============ */
+const STATUS={active:['نشط','c-green'],leave:['في إجازة','c-blue'],suspended:['موقوف','c-amber'],dismissed:['مفصول','c-red']};
+const WSTAT={approved:['معتمد','c-green'],pending:['قيد المراجعة','c-amber'],rejected:['مرفوض','c-red']};
+const WLEVEL={verbal:['تنبيه شفهي','c-gray',2],w1:['إنذار أول','c-amber',5],w2:['إنذار ثاني','c-red',10],final:['إنذار نهائي','c-red',20],suspend:['إيقاف مؤقت','c-violet',30]};
+const WARNST={active:['فعّال','c-red'],expired:['منتهي','c-gray'],cancelled:['ملغى','c-blue']};
+const LTYPE={leave:['إجازة','c-blue'],excused:['غياب بعذر','c-amber'],absent:['غياب بدون عذر','c-red']};
+const LSTAT={approved:['مقبولة','c-green'],pending:['قيد الطلب','c-amber'],rejected:['مرفوضة','c-red']};
+const DEFAULT_CFG={
+  supervisor:'',
+  ranks:['رئيس الرقابة والتفتيش','نائب الرئيس','مشرف رقابة','مفتش أول','مفتش','مفتش متدرب'],
+  workTypes:[{n:'جولة تفتيشية',p:10},{n:'رقابة ميدانية',p:8},{n:'ضبط مخالفة',p:12},{n:'تقرير رقابي',p:6},{n:'متابعة شكوى',p:7},{n:'مراقبة رومات/دوريات',p:6},{n:'مهمة إدارية',p:5},{n:'حضور اجتماع',p:3}],
+  maxWarnings:3,inactiveDays:7
+};
+const COLS=['members','works','warnings','leaves'];
+
+/* ============ state & storage (Supabase) ============ */
+/* ضع بيانات مشروعك من Supabase → Project Settings → API */
+const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';       
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  
+const S={members:{},works:{},warnings:{},leaves:{},cfg:structuredClone(DEFAULT_CFG)};
+let SB=null,MODE='loading',READONLY=false;
+const LSK='np9-rqaba-v1';
+function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg};}}catch(e){}}
+function lsSave(){try{localStorage.setItem(LSK,JSON.stringify({members:S.members,works:S.works,warnings:S.warnings,leaves:S.leaves,cfg:S.cfg}))}catch(e){}}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const toSnake=k=>k.replace(/[A-Z]/g,c=>'_'+c.toLowerCase());
+const toCamel=k=>k.replace(/_([a-z])/g,(_,c)=>c.toUpperCase());
+function toRow(id,o){const r={id};for(const[k,v]of Object.entries(o)){if(k==='id')continue;r[toSnake(k)]=(v===''?null:v)}return r}
+function fromRow(r){const o={};for(const[k,v]of Object.entries(r)){if(k==='id'||v===null)continue;o[toCamel(k)]=v}return o}
+
+async function put(col,id,obj){
+  S[col][id]=obj; render();
+  if(MODE==='cloud'){const {error}=await SB.from(col).upsert(toRow(id,obj));if(error)handleWriteErr(error)}else lsSave();
+}
+async function del(col,id){
+  delete S[col][id]; render();
+  if(MODE==='cloud'){const {error}=await SB.from(col).delete().eq('id',id);if(error)handleWriteErr(error)}else lsSave();
+}
+async function saveCfg(){
+  render();
+  if(MODE==='cloud'){const {error}=await SB.from('config').upsert({id:'main',data:S.cfg});if(error)handleWriteErr(error)}else lsSave();
+}
+function handleWriteErr(e){console.error(e);toast('تعذّر الحفظ: '+(e.message||'خطأ غير معروف'),true)}
+function setConn(m){
+  MODE=m;const d=$('#connDot'),t=$('#connTxt');
+  d.className='dot '+(m==='cloud'?'ok':m==='local'?'local':'');
+  t.textContent=m==='cloud'?'متصل بـ Supabase':m==='local'?'وضع محلي — الحفظ على هذا المتصفح':'جاري الاتصال…';
+  $('#logoutBtn').style.display=m==='cloud'?'':'none';
+}
+async function loadTable(c){
+  const {data,error}=await SB.from(c).select('*');
+  if(error){toast('خطأ في تحميل '+c+': '+error.message,true);return}
+  const m={};data.forEach(r=>m[r.id]=fromRow(r));S[c]=m;
+}
+async function loadCfg(){
+  const {data}=await SB.from('config').select('data').eq('id','main').maybeSingle();
+  S.cfg=data&&data.data?{...DEFAULT_CFG,...data.data}:structuredClone(DEFAULT_CFG);
+}
+let rtTimers={};
+function startCloud(){
+  setConn('cloud');$('#login').classList.remove('show');
+  Promise.all([...COLS.map(loadTable),loadCfg()]).then(render);
+  SB.channel('np9-live')
+    .on('postgres_changes',{event:'*',schema:'public'},p=>{
+      const t=p.table;clearTimeout(rtTimers[t]);
+      rtTimers[t]=setTimeout(()=>(t==='config'?loadCfg():loadTable(t)).then(render),300);
+    }).subscribe();
+}
+async function boot(){
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){lsLoad();setConn('local');render();return}
+  SB=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  const {data:{session}}=await SB.auth.getSession();
+  if(session)startCloud();else{setConn('loading');$('#connTxt').textContent='بانتظار تسجيل الدخول';$('#login').classList.add('show')}
+}
+async function doLogin(e){
+  e.preventDefault();const f=e.target,b=f.querySelector('button');b.disabled=true;$('#loginErr').textContent='';
+  const {error}=await SB.auth.signInWithPassword({email:f.email.value.trim(),password:f.password.value});
+  b.disabled=false;
+  if(error){$('#loginErr').textContent='بيانات الدخول غير صحيحة';return}
+  startCloud();
+}
+async function doLogout(){if(SB){await SB.auth.signOut();location.reload()}}
+
+/* ============ helpers ============ */
+function $(s){return document.querySelector(s)}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const daysBetween=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5);
+const fmtD=s=>{if(!s)return '—';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('ar-u-nu-latn',{day:'numeric',month:'short',year:'numeric'})};
+const fmtShort=s=>new Date(s+'T00:00:00').toLocaleDateString('ar-u-nu-latn',{day:'numeric',month:'numeric'});
+const ago=ts=>{const s=(Date.now()-ts)/1000;if(s<60)return 'الآن';if(s<3600)return `قبل ${Math.floor(s/60)} د`;if(s<86400)return `قبل ${Math.floor(s/3600)} س`;const d=Math.floor(s/86400);return d===1?'أمس':`قبل ${d} يوم`};
+const chip=([t,c])=>`<span class="chip ${c}">${esc(t)}</span>`;
+const initials=n=>{const p=String(n||'?').trim().split(/\s+/);return (p[0]?.[0]||'?')+(p[1]?.[0]||'')};
+const arr=c=>Object.entries(S[c]).map(([id,v])=>({id,...v}));
+const mem=id=>S.members[id];
+const mName=id=>mem(id)?.name||'عضو محذوف';
+function person(id,sub){const m=mem(id);return `<div class="person"><div class="av">${esc(initials(m?.name))}</div><div style="min-width:0"><b>${esc(m?.name||'عضو محذوف')}</b><small>${esc(sub??(m?.rank||''))}</small></div></div>`}
+function toast(t,err){const e=document.createElement('div');e.className='toast'+(err?' err':'');e.textContent=t;$('#toasts').appendChild(e);setTimeout(()=>e.remove(),3200)}
+function canW(){if(READONLY){toast('وضع العرض فقط',true);return false}return true}
+const typePts=n=>(S.cfg.workTypes.find(t=>t.n===n)||{}).p??5;
+function isOnLeave(mid,day=today()){return arr('leaves').some(l=>l.memberId===mid&&l.status==='approved'&&l.type==='leave'&&l.from<=day&&(l.to||l.from)>=day)}
+function warnActive(w){return w.status==='active'&&(!w.expires||w.expires>=today())}
+
+function statsFor(mid,from,to){
+  const inR=d=>(!from||d>=from)&&(!to||d<=to);
+  const works=arr('works').filter(w=>w.memberId===mid&&inR(w.date));
+  const appr=works.filter(w=>w.status==='approved');
+  const warns=arr('warnings').filter(w=>w.memberId===mid&&inR(w.date)&&w.status!=='cancelled');
+  const activeW=arr('warnings').filter(w=>w.memberId===mid&&warnActive(w));
+  const leaves=arr('leaves').filter(l=>l.memberId===mid&&inR(l.from)&&l.status!=='rejected');
+  const pts=appr.reduce((a,w)=>a+(+w.points||0),0);
+  const pen=warns.reduce((a,w)=>a+(WLEVEL[w.level]?.[2]||0),0);
+  const lastWork=works.map(w=>w.date).sort().pop()||null;
+  const absent=leaves.filter(l=>l.type==='absent').length;
+  return {works,appr,warns,activeW,leaves,pts,pen,score:pts-pen-absent*5,lastWork,absent};
+}
+
+/* ============ navigation ============ */
+const PAGES=[
+ ['dashboard','لوحة القيادة','dash'],['members','الأعضاء','users'],['works','سجل الأعمال','work'],
+ ['warnings','الإنذارات','warn'],['leaves','الإجازات والغياب','leave'],['ranking','الترتيب والتقييم','trophy'],
+ ['reports','التقارير','report'],['settings','الإعدادات','gear']];
+let page='dashboard';
+function route(){const h=location.hash.slice(1);page=PAGES.some(p=>p[0]===h)?h:'dashboard';document.body.classList.remove('nav-open');render();window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);
+function renderNav(){
+  const pend=arr('works').filter(w=>w.status==='pending').length;
+  const aw=arr('warnings').filter(warnActive).length;
+  $('#nav').innerHTML=PAGES.map(([k,t,i])=>{
+    let b='';if(k==='works'&&pend)b=`<span class="badge">${pend}</span>`;if(k==='warnings'&&aw)b=`<span class="badge">${aw}</span>`;
+    return `<a href="#${k}" class="${page===k?'on':''}">${ic(i)}<span>${t}</span>${b}</a>`}).join('');
+}
+
+/* ============ filters state ============ */
+const F={mq:'',mstat:'all',mrank:'all',wq:'',wm:'all',wt:'all',ws:'all',wp:'all',xq:'',xm:'all',xl:'all',xs:'all',lq:'',lt:'all',ls:'all',rp:'month',rFrom:'',rTo:'',kp:'month'};
+function setF(k,v){F[k]=v;render(true)}
+function periodRange(p){const t=today();if(p==='week')return [addDays(t,-6),t];if(p==='month')return [addDays(t,-29),t];if(p==='quarter')return [addDays(t,-89),t];return ['',''];}
+
+/* ============ render ============ */
+let focusKeep=null;
+function render(keepFocus){
+  const a=document.activeElement;focusKeep=keepFocus&&a&&a.id?{id:a.id,pos:a.selectionStart}:null;
+  renderNav();
+  const P=PAGES.find(p=>p[0]===page);$('#title').textContent=P[1];
+  $('#supName').textContent=S.cfg.supervisor?'المسؤول: '+S.cfg.supervisor:'';
+  const v=$('#view');
+  v.innerHTML=({dashboard:vDash,members:vMembers,works:vWorks,warnings:vWarnings,leaves:vLeaves,ranking:vRanking,reports:vReports,settings:vSettings})[page]();
+  if(focusKeep){const e=document.getElementById(focusKeep.id);if(e){e.focus();try{e.setSelectionRange(focusKeep.pos,focusKeep.pos)}catch(_){}}}
+}
+
+/* ---- dashboard ---- */
+function vDash(){
+  const M=arr('members'),W=arr('works'),X=arr('warnings'),t=today();
+  if(!M.length) return `<div class="card empty" style="padding:60px 20px"><img src="${LOGO}" alt=""><div class="big">أهلاً بك في نظام الرقابة والتفتيش</div><p class="mb">ابدأ بإضافة أعضاء فريق الرقابة، ثم سجّل أعمالهم وإنذاراتهم وتابع أداءهم من هنا.</p><button class="btn gold w-only" onclick="formMember()">${ic('plus',2.4)} إضافة أول عضو</button></div>`;
+  const activeM=M.filter(m=>m.status==='active');
+  const wk=addDays(t,-6);
+  const weekW=W.filter(w=>w.date>=wk&&w.status!=='rejected');
+  const pend=W.filter(w=>w.status==='pending');
+  const aw=X.filter(warnActive);
+  const onLeave=M.filter(m=>isOnLeave(m.id));
+  // alerts
+  const al=[];
+  M.filter(m=>m.status!=='dismissed').forEach(m=>{const n=aw.filter(w=>w.memberId===m.id).length;if(n>=S.cfg.maxWarnings)al.push(['red',`<b>${esc(m.name)}</b> لديه ${n} إنذارات فعّالة — تجاوز الحد المسموح (${S.cfg.maxWarnings}).`,m.id])});
+  activeM.forEach(m=>{if(isOnLeave(m.id))return;const last=W.filter(w=>w.memberId===m.id).map(w=>w.date).sort().pop();const ref=last||m.joined;if(ref&&daysBetween(ref,t)>=S.cfg.inactiveDays)al.push(['amber',`<b>${esc(m.name)}</b> بدون أي عمل مسجّل منذ ${daysBetween(ref,t)} يوم.`,m.id])});
+  aw.forEach(w=>{if(w.expires&&daysBetween(t,w.expires)<=3)al.push(['blue',`إنذار <b>${esc(mName(w.memberId))}</b> (${WLEVEL[w.level]?.[0]}) ينتهي ${w.expires===t?'اليوم':'خلال '+daysBetween(t,w.expires)+' يوم'}.`,w.memberId])});
+  if(pend.length)al.unshift(['amber',`يوجد <b>${pend.length}</b> عمل بانتظار مراجعتك واعتمادك. <a href="#works" onclick="F.ws='pending'">مراجعة الآن</a>`]);
+  // chart 14 days
+  const days=[...Array(14)].map((_,i)=>addDays(t,i-13));
+  const counts=days.map(d=>W.filter(w=>w.date===d&&w.status!=='rejected').length);
+  const mx=Math.max(1,...counts);
+  // by type
+  const byT={};W.filter(w=>w.date>=addDays(t,-29)&&w.status!=='rejected').forEach(w=>byT[w.type]=(byT[w.type]||0)+1);
+  const tl=Object.entries(byT).sort((a,b)=>b[1]-a[1]);const tmx=Math.max(1,...tl.map(x=>x[1]));
+  // top
+  const [f0,f1]=periodRange('month');
+  const top=M.filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score).slice(0,5);
+  // feed
+  const feed=[...W.map(w=>({ts:w.createdAt||0,c:'',i:'work',t:`${esc(mName(w.memberId))} — ${esc(w.type)}`,d:esc(w.title||'')})),
+    ...X.map(w=>({ts:w.createdAt||0,c:'red',i:'warn',t:`${WLEVEL[w.level]?.[0]||'إنذار'} لـ ${esc(mName(w.memberId))}`,d:esc(w.reason||'')})),
+    ...arr('leaves').map(l=>({ts:l.createdAt||0,c:'blue',i:'leave',t:`${LTYPE[l.type]?.[0]} — ${esc(mName(l.memberId))}`,d:`${fmtD(l.from)}${l.to&&l.to!==l.from?' ← '+fmtD(l.to):''}`})),
+    ...M.map(m=>({ts:m.createdAt||0,c:'green',i:'user',t:`انضمام ${esc(m.name)} للفريق`,d:esc(m.rank||'')}))].sort((a,b)=>b.ts-a.ts).slice(0,9);
+  const icC={'':'background:#d4a24c18;color:var(--gold)',red:'background:var(--red-bg);color:var(--red)',blue:'background:var(--blue-bg);color:var(--blue)',green:'background:var(--green-bg);color:var(--green)'};
+  return `
+  <div class="grid g4 mb">
+    <div class="card stat"><div class="ic">${ic('users')}</div><div class="k">أعضاء الفريق</div><div class="v">${M.filter(m=>m.status!=='dismissed').length}</div><div class="s">${activeM.length} نشط · ${onLeave.length} في إجازة اليوم</div></div>
+    <div class="card stat green"><div class="ic">${ic('work')}</div><div class="k">أعمال آخر 7 أيام</div><div class="v">${weekW.length}</div><div class="s">${W.filter(w=>w.date===t).length} عمل اليوم</div></div>
+    <div class="card stat blue"><div class="ic">${ic('clock')}</div><div class="k">بانتظار الاعتماد</div><div class="v">${pend.length}</div><div class="s">أعمال قيد المراجعة</div></div>
+    <div class="card stat red"><div class="ic">${ic('warn')}</div><div class="k">إنذارات فعّالة</div><div class="v">${aw.length}</div><div class="s">${X.filter(w=>w.date>=wk).length} إنذار هذا الأسبوع</div></div>
+  </div>
+  ${al.length?`<div class="card mb"><h3>${ic('shield')} تنبيهات تحتاج متابعتك <span class="muted">(${al.length})</span></h3>${al.slice(0,8).map(([c,h,mid])=>`<div class="alert ${c}">${ic(c==='blue'?'info':'warn')}<div style="flex:1">${h}</div>${mid?`<button class="btn sm ghost" onclick="openProfile('${mid}')">الملف</button>`:''}</div>`).join('')}</div>`:''}
+  <div class="grid g2 mb">
+    <div class="card"><div class="card-head"><h3>${ic('dash')} حركة الأعمال — آخر 14 يوم</h3></div>
+      <div class="bars">${days.map((d,i)=>`<div class="col"><div class="b" style="height:${counts[i]/mx*100}%" data-v="${counts[i]} عمل"></div><div class="l">${fmtShort(d)}</div></div>`).join('')}</div></div>
+    <div class="card"><h3>${ic('report')} توزيع الأعمال حسب النوع <span class="muted">· 30 يوم</span></h3>
+      ${tl.length?tl.slice(0,7).map(([n,c])=>`<div class="hbar"><span>${esc(n)}</span><div class="tr"><div class="fl" style="width:${c/tmx*100}%"></div></div><span class="n">${c}</span></div>`).join(''):'<div class="empty">لا توجد أعمال مسجلة بعد</div>'}</div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="card-head"><h3>${ic('trophy')} الأفضل أداءً هذا الشهر</h3><a class="btn sm" href="#ranking">الترتيب الكامل</a></div>
+      <div class="list">${top.map((x,i)=>`<div class="li clickable" onclick="openProfile('${x.m.id}')"><span class="rank-n">${i+1}</span>${person(x.m.id)}<div class="right" style="text-align:left"><div class="score">${x.s.score}</div><div class="d">${x.s.appr.length} عمل · ${x.s.warns.length} إنذار</div></div></div>`).join('')}</div></div>
+    <div class="card"><h3>${ic('clock')} آخر النشاطات</h3>
+      <div class="list">${feed.length?feed.map(f=>`<div class="li"><div class="ico-dot" style="${icC[f.c]}">${ic(f.i)}</div><div class="grow"><div class="t">${f.t}</div><div class="d">${f.d}</div></div><span class="d">${f.ts?ago(f.ts):''}</span></div>`).join(''):'<div class="empty">لا يوجد نشاط</div>'}</div></div>
+  </div>`;
+}
+
+/* ---- members ---- */
+function vMembers(){
+  let M=arr('members');
+  const q=F.mq.trim().toLowerCase();
+  if(q)M=M.filter(m=>[m.name,m.discordId,m.badge,m.rank].join(' ').toLowerCase().includes(q));
+  if(F.mstat!=='all')M=M.filter(m=>m.status===F.mstat);
+  if(F.mrank!=='all')M=M.filter(m=>m.rank===F.mrank);
+  const ro=S.cfg.ranks;M.sort((a,b)=>(ro.indexOf(a.rank)+99*(ro.indexOf(a.rank)<0))-(ro.indexOf(b.rank)+99*(ro.indexOf(b.rank)<0))||String(a.name).localeCompare(b.name,'ar'));
+  const [f0,f1]=periodRange('month');
+  return `<div class="bar">
+    <div class="search">${ic('search')}<input id="mq" class="inp" placeholder="بحث بالاسم، الآيدي، الرقم الوظيفي…" value="${esc(F.mq)}" oninput="setF('mq',this.value)"></div>
+    <select class="inp" onchange="setF('mstat',this.value)"><option value="all">كل الحالات</option>${Object.entries(STATUS).map(([k,[t]])=>`<option value="${k}" ${F.mstat===k?'selected':''}>${t}</option>`).join('')}</select>
+    <select class="inp" onchange="setF('mrank',this.value)"><option value="all">كل الرتب</option>${S.cfg.ranks.map(r=>`<option ${F.mrank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
+    <button class="btn gold right w-only" onclick="formMember()">${ic('plus',2.4)} إضافة عضو</button>
+  </div>
+  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>آيدي ديسكورد</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
+  ${M.map(m=>{const s=statsFor(m.id,f0,f1);const st=isOnLeave(m.id)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
+   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${esc(m.discordId||'—')}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
+   <td class="actions" onclick="event.stopPropagation()"><button class="icon-btn" title="الملف" onclick="openProfile('${m.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('members','${m.id}','العضو ${esc(m.name)}')">${ic('trash')}</button></td></tr>`}).join('')}
+  </tbody></table></div>`:emptyBox('لا يوجد أعضاء','أضف أعضاء فريق الرقابة والتفتيش لبدء المتابعة.','formMember()','إضافة عضو')}`;
+}
+function emptyBox(t,d,fn,b){return `<div class="card empty"><img src="${LOGO}" alt=""><div class="big">${t}</div><p class="mb">${d}</p>${fn?`<button class="btn gold w-only" onclick="${fn}">${ic('plus',2.4)} ${b}</button>`:''}</div>`}
+function memberOpts(sel,all){const M=arr('members').filter(m=>m.status!=='dismissed'||m.id===sel).sort((a,b)=>String(a.name).localeCompare(b.name,'ar'));return (all?`<option value="all">كل الأعضاء</option>`:`<option value="">— اختر العضو —</option>`)+M.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${esc(m.name)}${m.badge?' · '+esc(m.badge):''}</option>`).join('')}
+
+/* ---- works ---- */
+function vWorks(){
+  let W=arr('works');const q=F.wq.trim().toLowerCase();
+  if(q)W=W.filter(w=>[w.title,w.details,w.type,mName(w.memberId),w.location].join(' ').toLowerCase().includes(q));
+  if(F.wm!=='all')W=W.filter(w=>w.memberId===F.wm);
+  if(F.wt!=='all')W=W.filter(w=>w.type===F.wt);
+  if(F.ws!=='all')W=W.filter(w=>w.status===F.ws);
+  const [f0]=periodRange(F.wp);if(f0)W=W.filter(w=>w.date>=f0);
+  W.sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const pts=W.filter(w=>w.status==='approved').reduce((a,w)=>a+(+w.points||0),0);
+  return `<div class="bar">
+    <div class="search">${ic('search')}<input id="wq" class="inp" placeholder="بحث في الأعمال…" value="${esc(F.wq)}" oninput="setF('wq',this.value)"></div>
+    <select class="inp" onchange="setF('wm',this.value)">${memberOpts(F.wm,1)}</select>
+    <select class="inp" onchange="setF('wt',this.value)"><option value="all">كل الأنواع</option>${S.cfg.workTypes.map(t=>`<option ${F.wt===t.n?'selected':''}>${esc(t.n)}</option>`).join('')}</select>
+    <select class="inp" onchange="setF('ws',this.value)"><option value="all">كل الحالات</option>${Object.entries(WSTAT).map(([k,[t]])=>`<option value="${k}" ${F.ws===k?'selected':''}>${t}</option>`).join('')}</select>
+    ${segP('wp')}
+    <button class="btn gold right w-only" onclick="formWork()">${ic('plus',2.4)} تسجيل عمل</button>
+  </div>
+  <div class="flex mb muted" style="font-size:13.5px">${W.length} عمل · ${pts} نقطة معتمدة</div>
+  ${W.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>نوع العمل</th><th>التفاصيل</th><th>التاريخ</th><th>النقاط</th><th>الحالة</th><th></th></tr></thead><tbody>
+  ${W.map(w=>`<tr><td class="clickable" onclick="openProfile('${w.memberId}')">${person(w.memberId)}</td><td>${chip([w.type,'c-gold'])}</td><td style="max-width:340px"><b>${esc(w.title||'')}</b>${w.location?`<div class="dim" style="font-size:12.5px">📍 ${esc(w.location)}</div>`:''}${w.details?`<div class="dim" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.details)}</div>`:''}</td><td class="dim">${fmtD(w.date)}</td><td class="score">${w.status==='approved'?'+'+(+w.points||0):'<span class="dim">'+(+w.points||0)+'</span>'}</td><td>${chip(WSTAT[w.status]||WSTAT.pending)}</td>
+  <td class="actions">${w.status==='pending'?`<button class="icon-btn w-only" style="color:var(--green)" title="اعتماد" onclick="setWork('${w.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn w-only" style="color:var(--red)" title="رفض" onclick="setWork('${w.id}','rejected')">${ic('x',2.6)}</button>`:''}<button class="icon-btn" title="عرض" onclick="viewWork('${w.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formWork('${w.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('works','${w.id}','هذا العمل')">${ic('trash')}</button></td></tr>`).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد أعمال','سجّل أعمال الأعضاء من جولات تفتيش ومخالفات وتقارير.','formWork()','تسجيل عمل')}`;
+}
+function segP(k){return `<div class="seg">${[['week','أسبوع'],['month','شهر'],['quarter','3 أشهر'],['all','الكل']].map(([v,t])=>`<button class="${F[k]===v?'on':''}" onclick="setF('${k}','${v}')">${t}</button>`).join('')}</div>`}
+function setWork(id,st){if(!canW())return;const w=S.works[id];put('works',id,{...w,status:st});toast(st==='approved'?'تم اعتماد العمل ✓':'تم رفض العمل')}
+
+/* ---- warnings ---- */
+function vWarnings(){
+  let X=arr('warnings');const q=F.xq.trim().toLowerCase();
+  if(q)X=X.filter(w=>[w.reason,mName(w.memberId),w.issuedBy,w.notes].join(' ').toLowerCase().includes(q));
+  if(F.xm!=='all')X=X.filter(w=>w.memberId===F.xm);
+  if(F.xl!=='all')X=X.filter(w=>w.level===F.xl);
+  if(F.xs!=='all')X=X.filter(w=>F.xs==='active'?warnActive(w):F.xs==='expired'?(w.status==='expired'||(w.status==='active'&&!warnActive(w))):w.status===F.xs);
+  X.sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const cnt=k=>arr('warnings').filter(w=>w.level===k&&w.status!=='cancelled').length;
+  return `<div class="grid g4 mb" style="grid-template-columns:repeat(5,1fr)">${Object.entries(WLEVEL).map(([k,[t,c]])=>`<div class="card stat" style="padding:14px"><div class="k">${t}</div><div class="v" style="font-size:26px">${cnt(k)}</div></div>`).join('')}</div>
+  <div class="bar">
+    <div class="search">${ic('search')}<input id="xq" class="inp" placeholder="بحث في الإنذارات…" value="${esc(F.xq)}" oninput="setF('xq',this.value)"></div>
+    <select class="inp" onchange="setF('xm',this.value)">${memberOpts(F.xm,1)}</select>
+    <select class="inp" onchange="setF('xl',this.value)"><option value="all">كل الدرجات</option>${Object.entries(WLEVEL).map(([k,[t]])=>`<option value="${k}" ${F.xl===k?'selected':''}>${t}</option>`).join('')}</select>
+    <select class="inp" onchange="setF('xs',this.value)"><option value="all">كل الحالات</option>${Object.entries(WARNST).map(([k,[t]])=>`<option value="${k}" ${F.xs===k?'selected':''}>${t}</option>`).join('')}</select>
+    <button class="btn gold right w-only" onclick="formWarning()">${ic('plus',2.4)} إصدار إنذار</button>
+  </div>
+  ${X.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الدرجة</th><th>السبب</th><th>التاريخ</th><th>ينتهي</th><th>صادر من</th><th>الحالة</th><th></th></tr></thead><tbody>
+  ${X.map(w=>{const st=warnActive(w)?WARNST.active:w.status==='cancelled'?WARNST.cancelled:WARNST.expired;return `<tr><td class="clickable" onclick="openProfile('${w.memberId}')">${person(w.memberId)}</td><td>${chip(WLEVEL[w.level]||WLEVEL.w1)}</td><td style="max-width:320px">${esc(w.reason)}</td><td class="dim">${fmtD(w.date)}</td><td class="dim">${w.expires?fmtD(w.expires):'دائم'}</td><td>${esc(w.issuedBy||'—')}</td><td>${chip(st)}</td>
+  <td class="actions">${warnActive(w)?`<button class="btn sm w-only" onclick="cancelWarn('${w.id}')">إلغاء</button>`:''}<button class="icon-btn w-only" onclick="formWarning(null,'${w.id}')">${ic('edit')}</button><button class="icon-btn del w-only" onclick="askDel('warnings','${w.id}','هذا الإنذار')">${ic('trash')}</button></td></tr>`}).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد إنذارات','سجل الإنذارات نظيف.','formWarning()','إصدار إنذار')}`;
+}
+function cancelWarn(id){if(!canW())return;put('warnings',id,{...S.warnings[id],status:'cancelled'});toast('تم إلغاء الإنذار')}
+
+/* ---- leaves ---- */
+function vLeaves(){
+  let L=arr('leaves');const q=F.lq.trim().toLowerCase();
+  if(q)L=L.filter(l=>[l.reason,mName(l.memberId)].join(' ').toLowerCase().includes(q));
+  if(F.lt!=='all')L=L.filter(l=>l.type===F.lt);
+  if(F.ls!=='all')L=L.filter(l=>l.status===F.ls);
+  L.sort((a,b)=>b.from.localeCompare(a.from));
+  const t=today();
+  const now=arr('leaves').filter(l=>l.status==='approved'&&l.from<=t&&(l.to||l.from)>=t);
+  return `${now.length?`<div class="alert blue">${ic('info')}<div>غائبون اليوم: ${now.map(l=>`<b>${esc(mName(l.memberId))}</b> (${LTYPE[l.type][0]})`).join('، ')}</div></div>`:''}
+  <div class="bar">
+    <div class="search">${ic('search')}<input id="lq" class="inp" placeholder="بحث…" value="${esc(F.lq)}" oninput="setF('lq',this.value)"></div>
+    <select class="inp" onchange="setF('lt',this.value)"><option value="all">كل الأنواع</option>${Object.entries(LTYPE).map(([k,[t]])=>`<option value="${k}" ${F.lt===k?'selected':''}>${t}</option>`).join('')}</select>
+    <select class="inp" onchange="setF('ls',this.value)"><option value="all">كل الحالات</option>${Object.entries(LSTAT).map(([k,[t]])=>`<option value="${k}" ${F.ls===k?'selected':''}>${t}</option>`).join('')}</select>
+    <button class="btn gold right w-only" onclick="formLeave()">${ic('plus',2.4)} تسجيل إجازة / غياب</button>
+  </div>
+  ${L.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>النوع</th><th>من</th><th>إلى</th><th>المدة</th><th>السبب</th><th>الحالة</th><th></th></tr></thead><tbody>
+  ${L.map(l=>`<tr><td class="clickable" onclick="openProfile('${l.memberId}')">${person(l.memberId)}</td><td>${chip(LTYPE[l.type]||LTYPE.leave)}</td><td class="dim">${fmtD(l.from)}</td><td class="dim">${fmtD(l.to||l.from)}</td><td>${daysBetween(l.from,l.to||l.from)+1} يوم</td><td style="max-width:280px">${esc(l.reason||'—')}</td><td>${chip(LSTAT[l.status]||LSTAT.pending)}</td>
+  <td class="actions">${l.status==='pending'?`<button class="icon-btn w-only" style="color:var(--green)" title="قبول" onclick="setLeave('${l.id}','approved')">${ic('check',2.6)}</button><button class="icon-btn w-only" style="color:var(--red)" title="رفض" onclick="setLeave('${l.id}','rejected')">${ic('x',2.6)}</button>`:''}<button class="icon-btn w-only" onclick="formLeave(null,'${l.id}')">${ic('edit')}</button><button class="icon-btn del w-only" onclick="askDel('leaves','${l.id}','هذا السجل')">${ic('trash')}</button></td></tr>`).join('')}
+  </tbody></table></div>`:emptyBox('لا توجد إجازات أو غيابات','سجّل الإجازات والغيابات لاحتسابها في المتابعة.','formLeave()','تسجيل')}`;
+}
+function setLeave(id,st){if(!canW())return;put('leaves',id,{...S.leaves[id],status:st});toast(st==='approved'?'تم قبول الطلب':'تم رفض الطلب')}
+
+/* ---- ranking ---- */
+function vRanking(){
+  const [f0,f1]=periodRange(F.kp);
+  const R=arr('members').filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score||b.s.appr.length-a.s.appr.length);
+  if(!R.length)return emptyBox('لا يوجد أعضاء للترتيب','','formMember()','إضافة عضو');
+  const p=R.slice(0,3);const podOrder=[p[1],p[0],p[2]];const cls=['p2','p1','p3'];const lbl=['المركز الثاني','المركز الأول','المركز الثالث'];
+  return `<div class="bar">${segP('kp')}<span class="muted right" style="font-size:13px">النقاط = نقاط الأعمال المعتمدة − خصم الإنذارات − 5 لكل غياب بدون عذر</span></div>
+  <div class="podium">${podOrder.map((x,i)=>x?`<div class="pod ${cls[i]} clickable" onclick="openProfile('${x.m.id}')"><span class="medal">${lbl[i]}</span><div class="av ${i===1?'lg':''}" style="${i!==1?'width:56px;height:56px;font-size:20px':''}">${esc(initials(x.m.name))}</div><div style="font-weight:800;font-family:Cairo">${esc(x.m.name)}</div><div class="dim" style="font-size:12.5px">${esc(x.m.rank||'')}</div><div class="sc">${x.s.score}</div><div class="dim" style="font-size:12.5px">${x.s.appr.length} عمل معتمد</div></div>`:'<div></div>').join('')}</div>
+  <div class="tbl-wrap"><table><thead><tr><th>#</th><th>العضو</th><th>أعمال معتمدة</th><th>نقاط الأعمال</th><th>الإنذارات</th><th>خصم</th><th>غياب بدون عذر</th><th>المجموع</th></tr></thead><tbody>
+  ${R.map((x,i)=>`<tr class="clickable" onclick="openProfile('${x.m.id}')"><td class="rank-n" style="${i<3?'color:var(--gold2)':''}">${i+1}</td><td>${person(x.m.id)}</td><td>${x.s.appr.length}</td><td style="color:var(--green)">+${x.s.pts}</td><td>${x.s.warns.length}</td><td style="color:var(--red)">${x.s.pen?'-'+x.s.pen:'0'}</td><td>${x.s.absent}</td><td class="score" style="font-size:17px">${x.s.score}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ---- reports ---- */
+function vReports(){
+  let [f0,f1]=F.rp==='custom'?[F.rFrom,F.rTo]:periodRange(F.rp);
+  const R=arr('members').filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score);
+  const totW=R.reduce((a,x)=>a+x.s.appr.length,0),totX=R.reduce((a,x)=>a+x.s.warns.length,0);
+  const inactive=R.filter(x=>x.m.status==='active'&&!x.s.works.length);
+  const label=f0?`من ${fmtD(f0)} إلى ${fmtD(f1||today())}`:'كل الفترات';
+  const txt=reportText(R,label,totW,totX,inactive);
+  window._rep=txt;
+  return `<div class="bar"><div class="seg">${[['week','أسبوعي'],['month','شهري'],['quarter','ربع سنوي'],['all','الكل'],['custom','مخصص']].map(([v,t])=>`<button class="${F.rp===v?'on':''}" onclick="setF('rp','${v}')">${t}</button>`).join('')}</div>
+  ${F.rp==='custom'?`<input type="date" class="inp" value="${F.rFrom}" onchange="setF('rFrom',this.value)"><span class="muted">إلى</span><input type="date" class="inp" value="${F.rTo}" onchange="setF('rTo',this.value)">`:''}
+  <span class="muted">${label}</span></div>
+  <div class="grid g4 mb">
+    <div class="card stat"><div class="k">أعمال معتمدة</div><div class="v">${totW}</div></div>
+    <div class="card stat red"><div class="k">إنذارات</div><div class="v">${totX}</div></div>
+    <div class="card stat blue"><div class="k">أعضاء بدون أعمال</div><div class="v">${inactive.length}</div></div>
+    <div class="card stat green"><div class="k">متوسط الأعمال للعضو</div><div class="v">${R.length?(totW/R.length).toFixed(1):0}</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>${ic('report')} تفصيل الأداء</h3><div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>أعمال</th><th>نقاط</th><th>إنذارات</th><th>إجازات/غياب</th><th>المجموع</th></tr></thead><tbody>
+    ${R.map(x=>`<tr class="clickable" onclick="openProfile('${x.m.id}')"><td>${person(x.m.id)}</td><td>${x.s.appr.length}</td><td>${x.s.pts}</td><td>${x.s.warns.length}</td><td>${x.s.leaves.length}</td><td class="score">${x.s.score}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">لا يوجد</td></tr>'}
+    </tbody></table></div></div>
+    <div class="card"><div class="card-head"><h3>${ic('copy')} تقرير جاهز لديسكورد</h3><button class="btn gold sm" onclick="copyTxt(window._rep)">${ic('copy')} نسخ</button></div><div class="pre">${esc(txt)}</div></div>
+  </div>`;
+}
+function reportText(R,label,totW,totX,inactive){
+  const L=[];L.push('# 📋 تقرير الرقابة والتفتيش — NP9');L.push(`**الفترة:** ${label}`);L.push('');
+  L.push(`✅ الأعمال المعتمدة: **${totW}**`);L.push(`⚠️ الإنذارات: **${totX}**`);L.push(`👥 عدد الأعضاء: **${R.length}**`);L.push('');
+  L.push('## 🏆 ترتيب الأعضاء');
+  R.forEach((x,i)=>{const md=['🥇','🥈','🥉'][i]||`${i+1}.`;L.push(`${md} **${x.m.name}** — ${x.s.score} نقطة (${x.s.appr.length} عمل${x.s.warns.length?` · ${x.s.warns.length} إنذار`:''})`)});
+  if(inactive.length){L.push('');L.push('## 🔻 بدون أعمال خلال الفترة');inactive.forEach(x=>L.push(`- ${x.m.name}`))}
+  const aw=arr('warnings').filter(warnActive);
+  if(aw.length){L.push('');L.push('## ⚠️ الإنذارات الفعّالة');aw.forEach(w=>L.push(`- ${mName(w.memberId)}: ${WLEVEL[w.level]?.[0]} — ${w.reason}`))}
+  L.push('');L.push(`> صادر من: ${S.cfg.supervisor||'مسؤول الرقابة والتفتيش'}`);
+  return L.join('\n');
+}
+async function copyTxt(t){try{await navigator.clipboard.writeText(t);toast('تم النسخ ✓')}catch(e){openModal('انسخ النص',`<textarea class="inp" style="width:100%;min-height:300px" onclick="this.select()">${esc(t)}</textarea>`,null)}}
+
+/* ---- settings ---- */
+function vSettings(){
+  const c=S.cfg;
+  return `<div class="grid g2">
+  <div class="card"><h3>${ic('user')} معلومات المسؤول</h3>
+    <div class="form"><div class="fld full"><label>اسم مسؤول الرقابة والتفتيش</label><input class="inp" id="setSup" value="${esc(c.supervisor)}" placeholder="مثال: Abdullah"><div class="hint">يظهر كاسم مُصدِر الإنذارات وفي التقارير.</div></div>
+    <div class="fld"><label>حد الإنذارات الفعّالة للتنبيه</label><input class="inp" type="number" min="1" id="setMax" value="${c.maxWarnings}"></div>
+    <div class="fld"><label>أيام عدم النشاط للتنبيه</label><input class="inp" type="number" min="1" id="setIn" value="${c.inactiveDays}"></div></div>
+    <button class="btn gold mt w-only" onclick="saveGeneral()">${ic('check')} حفظ</button>
+  </div>
+  <div class="card"><h3>${ic('star')} الرتب <span class="muted">(بالترتيب من الأعلى)</span></h3>
+    <div class="tag-list" id="ranks">${c.ranks.map((r,i)=>`<div class="tag-item"><span>${esc(r)}</span><button class="icon-btn del w-only" onclick="rmRank(${i})">${ic('x')}</button></div>`).join('')}</div>
+    <div class="flex mt w-only"><input class="inp" id="newRank" placeholder="رتبة جديدة" style="flex:1"><button class="btn" onclick="addRank()">${ic('plus')} إضافة</button></div>
+  </div>
+  <div class="card"><h3>${ic('work')} أنواع الأعمال والنقاط</h3>
+    <div class="tbl-wrap"><table><thead><tr><th>نوع العمل</th><th>النقاط</th><th></th></tr></thead><tbody>
+    ${c.workTypes.map((t,i)=>`<tr><td><input class="inp" style="width:100%" value="${esc(t.n)}" onchange="wtEdit(${i},'n',this.value)"></td><td><input class="inp" type="number" style="width:80px" value="${t.p}" onchange="wtEdit(${i},'p',+this.value)"></td><td class="actions"><button class="icon-btn del w-only" onclick="wtRm(${i})">${ic('trash')}</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <button class="btn mt w-only" onclick="wtAdd()">${ic('plus')} نوع جديد</button>
+    <h3 class="mt">${ic('warn')} خصم الإنذارات</h3>
+    <div class="tag-list">${Object.values(WLEVEL).map(([t,c,p])=>`<span class="chip ${c}">${t}: -${p}</span>`).join('')}</div>
+  </div>
+  <div class="card"><h3>${ic('shield')} النسخ الاحتياطي</h3>
+    <p class="muted mb" style="font-size:14px">انسخ كل البيانات كنص JSON واحفظه عندك، أو الصق نسخة سابقة لاستعادتها.</p>
+    <div class="flex"><button class="btn" onclick="copyTxt(JSON.stringify({members:S.members,works:S.works,warnings:S.warnings,leaves:S.leaves,cfg:S.cfg}))">${ic('copy')} نسخ البيانات</button><button class="btn w-only" onclick="importForm()">استعادة من نسخة</button></div>
+    <div class="mt muted" style="font-size:13px">حالة الحفظ: <b>${MODE==='cloud'?'Supabase — البيانات محفوظة في قاعدة البيانات ومتاحة من أي جهاز':'محلي — على هذا المتصفح فقط (أضف بيانات Supabase في أعلى الكود)'}</b></div>
+  </div></div>`;
+}
+function saveGeneral(){if(!canW())return;S.cfg={...S.cfg,supervisor:$('#setSup').value.trim(),maxWarnings:Math.max(1,+$('#setMax').value||3),inactiveDays:Math.max(1,+$('#setIn').value||7)};saveCfg();toast('تم حفظ الإعدادات')}
+function addRank(){if(!canW())return;const v=$('#newRank').value.trim();if(!v)return;S.cfg={...S.cfg,ranks:[...S.cfg.ranks,v]};saveCfg()}
+function rmRank(i){if(!canW())return;const r=[...S.cfg.ranks];r.splice(i,1);S.cfg={...S.cfg,ranks:r};saveCfg()}
+function wtEdit(i,k,v){if(!canW())return;const w=S.cfg.workTypes.map(x=>({...x}));w[i][k]=v;S.cfg={...S.cfg,workTypes:w};saveCfg()}
+function wtRm(i){if(!canW())return;const w=[...S.cfg.workTypes];w.splice(i,1);S.cfg={...S.cfg,workTypes:w};saveCfg()}
+function wtAdd(){if(!canW())return;S.cfg={...S.cfg,workTypes:[...S.cfg.workTypes,{n:'نوع جديد',p:5}]};saveCfg()}
+function importForm(){openModal('استعادة نسخة احتياطية',`<div class="fld"><label>الصق نص النسخة الاحتياطية</label><textarea class="inp" name="j" style="min-height:220px;direction:ltr"></textarea><div class="hint">سيتم دمج البيانات مع الموجودة (السجلات بنفس المعرّف تُستبدل).</div></div>`,async fd=>{
+  let d;try{d=JSON.parse(fd.get('j'))}catch(e){toast('النص غير صالح',true);return false}
+  for(const c of COLS){const rows=Object.entries(d[c]||{});rows.forEach(([id,v])=>S[c][id]=v);if(MODE==='cloud'&&rows.length){const {error}=await SB.from(c).upsert(rows.map(([id,v])=>toRow(id,v)));if(error){handleWriteErr(error);return false}}}
+  if(d.cfg){S.cfg={...DEFAULT_CFG,...d.cfg};await saveCfg()}
+  if(MODE!=='cloud')lsSave();render();toast('تمت الاستعادة ✓');
+},'استعادة')}
+
+/* ============ modal ============ */
+let mSubmit=null;
+function openModal(title,body,onSubmit,okText='حفظ',wide){
+  const m=$('#modal');m.className='modal'+(wide?' wide':'');
+  m.innerHTML=`<form id="mform"><div class="m-head"><h3>${title}</h3><button type="button" class="icon-btn" onclick="closeModal()">${ic('x')}</button></div><div class="m-body">${body}</div>${onSubmit?`<div class="m-foot"><button class="btn gold" type="submit">${ic('check')} ${okText}</button><button class="btn" type="button" onclick="closeModal()">إلغاء</button></div>`:''}</form>`;
+  mSubmit=onSubmit;$('#ov').classList.add('show');
+  $('#mform').onsubmit=async e=>{e.preventDefault();if(!mSubmit)return;const r=await mSubmit(new FormData(e.target));if(r!==false)closeModal()};
+  setTimeout(()=>{const f=m.querySelector('input:not([type=hidden]),select,textarea');f&&f.focus()},50);
+}
+function closeModal(){$('#ov').classList.remove('show');mSubmit=null}
+$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+const fld=(l,inner,full,req)=>`<div class="fld ${full?'full':''}"><label>${l}${req?' <i>*</i>':''}</label>${inner}</div>`;
+const opts=(o,sel)=>Object.entries(o).map(([k,[t]])=>`<option value="${k}" ${sel===k?'selected':''}>${t}</option>`).join('');
+
+function askDel(col,id,what){if(!canW())return;openModal('تأكيد الحذف',`<p>هل أنت متأكد من حذف ${what}؟ لا يمكن التراجع عن هذا الإجراء.</p>${col==='members'?'<p class="dim mt" style="font-size:13px">ملاحظة: أعمال وإنذارات العضو تبقى في السجل باسم "عضو محذوف". يمكنك بدلاً من ذلك تغيير حالته إلى "مفصول".</p>':''}`,()=>{del(col,id);toast('تم الحذف');if(col==='members')closeModal()},'حذف نهائي')}
+
+function formMember(id){
+  if(!canW())return;const m=id?S.members[id]:{status:'active',joined:today(),rank:S.cfg.ranks[S.cfg.ranks.length-1]};
+  openModal(id?'تعديل بيانات عضو':'إضافة عضو جديد',`<div class="form">
+   ${fld('الاسم',`<input class="inp" name="name" required value="${esc(m.name||'')}" placeholder="اسم العضو في السيرفر">`,1,1)}
+   ${fld('الرقم الوظيفي',`<input class="inp" name="badge" value="${esc(m.badge||'')}" placeholder="مثال: R-101">`)}
+   ${fld('آيدي ديسكورد',`<input class="inp" name="discordId" value="${esc(m.discordId||'')}" placeholder="@user أو ID" style="direction:ltr;text-align:right">`)}
+   ${fld('الرتبة',`<select class="inp" name="rank">${S.cfg.ranks.map(r=>`<option ${m.rank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>`)}
+   ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
+   ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
+   ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
+}
+function formWork(id,preMember){
+  if(!canW())return;if(!arr('members').length){toast('أضف عضواً أولاً',true);location.hash='members';return}
+  const w=id?S.works[id]:{date:today(),status:'approved',type:S.cfg.workTypes[0]?.n,memberId:preMember||''};
+  openModal(id?'تعديل عمل':'تسجيل عمل جديد',`<div class="form">
+   ${fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(w.memberId)}</select>`,0,1)}
+   ${fld('نوع العمل',`<select class="inp" name="type" id="wType" onchange="document.getElementById('wPts').value=typePts(this.value)">${S.cfg.workTypes.map(t=>`<option ${w.type===t.n?'selected':''}>${esc(t.n)}</option>`).join('')}</select>`)}
+   ${fld('عنوان العمل',`<input class="inp" name="title" required value="${esc(w.title||'')}" placeholder="مثال: تفتيش دورية المنطقة الشمالية">`,1,1)}
+   ${fld('التاريخ',`<input class="inp" type="date" name="date" required value="${w.date}">`)}
+   ${fld('الموقع / المكان',`<input class="inp" name="location" value="${esc(w.location||'')}">`)}
+   ${fld('النقاط',`<input class="inp" type="number" id="wPts" name="points" value="${w.points??typePts(w.type)}">`)}
+   ${fld('الحالة',`<select class="inp" name="status">${opts(WSTAT,w.status)}</select>`)}
+   ${fld('التفاصيل',`<textarea class="inp" name="details" placeholder="وصف ما تم…">${esc(w.details||'')}</textarea>`,1)}
+   ${fld('رابط الإثبات',`<input class="inp" name="proof" value="${esc(w.proof||'')}" placeholder="رابط صورة/مقطع/رسالة ديسكورد" style="direction:ltr;text-align:right">`,1)}
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.memberId){toast('اختر العضو',true);return false}o.points=+o.points||0;put('works',id||uid(),{...(id?S.works[id]:{createdAt:Date.now()}),...o});toast(id?'تم التعديل':'تم تسجيل العمل ✓')});
+}
+function viewWork(id){const w=S.works[id];openModal('تفاصيل العمل',`${person(w.memberId)}<div class="mt flex">${chip([w.type,'c-gold'])}${chip(WSTAT[w.status])}<span class="dim">${fmtD(w.date)}</span><span class="score right">${w.points} نقطة</span></div>
+  <h3 class="mt" style="font-size:17px">${esc(w.title||'')}</h3>${w.location?`<p class="dim">📍 ${esc(w.location)}</p>`:''}<p class="mt" style="white-space:pre-wrap">${esc(w.details||'لا توجد تفاصيل')}</p>${w.proof?`<p class="mt">الإثبات: <a href="${esc(w.proof)}" target="_blank" rel="noopener" style="direction:ltr;display:inline-block">${esc(w.proof)}</a></p>`:''}`,null)}
+function formWarning(preMember,id){
+  if(!canW())return;if(!arr('members').length){toast('أضف عضواً أولاً',true);location.hash='members';return}
+  const w=id?S.warnings[id]:{date:today(),level:'w1',status:'active',memberId:preMember||'',issuedBy:S.cfg.supervisor,expires:addDays(today(),14)};
+  openModal(id?'تعديل إنذار':'إصدار إنذار',`<div class="form">
+   ${fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(w.memberId)}</select>`,1,1)}
+   ${fld('درجة الإنذار',`<select class="inp" name="level">${opts(WLEVEL,w.level)}</select>`)}
+   ${fld('الحالة',`<select class="inp" name="status">${opts(WARNST,w.status)}</select>`)}
+   ${fld('السبب',`<textarea class="inp" name="reason" required placeholder="سبب الإنذار بالتفصيل">${esc(w.reason||'')}</textarea>`,1,1)}
+   ${fld('تاريخ الإصدار',`<input class="inp" type="date" name="date" required value="${w.date}">`)}
+   ${fld('تاريخ الانتهاء',`<input class="inp" type="date" name="expires" value="${w.expires||''}"><div class="hint">اتركه فارغاً لإنذار دائم</div>`)}
+   ${fld('صادر من',`<input class="inp" name="issuedBy" value="${esc(w.issuedBy||'')}">`)}
+   ${fld('ملاحظات',`<input class="inp" name="notes" value="${esc(w.notes||'')}">`)}
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.memberId){toast('اختر العضو',true);return false}put('warnings',id||uid(),{...(id?S.warnings[id]:{createdAt:Date.now()}),...o});
+   if(!id){const n=arr('warnings').filter(x=>x.memberId===o.memberId&&warnActive(x)).length;toast(n>=S.cfg.maxWarnings?`⚠️ ${mName(o.memberId)} وصل إلى ${n} إنذارات فعّالة!`:'تم إصدار الإنذار',n>=S.cfg.maxWarnings)}else toast('تم التعديل')},id?'حفظ':'إصدار الإنذار');
+}
+function formLeave(preMember,id){
+  if(!canW())return;if(!arr('members').length){toast('أضف عضواً أولاً',true);location.hash='members';return}
+  const l=id?S.leaves[id]:{from:today(),to:today(),type:'leave',status:'approved',memberId:preMember||''};
+  openModal(id?'تعديل سجل':'تسجيل إجازة / غياب',`<div class="form">
+   ${fld('العضو',`<select class="inp" name="memberId" required>${memberOpts(l.memberId)}</select>`,1,1)}
+   ${fld('النوع',`<select class="inp" name="type">${opts(LTYPE,l.type)}</select>`)}
+   ${fld('الحالة',`<select class="inp" name="status">${opts(LSTAT,l.status)}</select>`)}
+   ${fld('من',`<input class="inp" type="date" name="from" required value="${l.from}">`)}
+   ${fld('إلى',`<input class="inp" type="date" name="to" value="${l.to||''}">`)}
+   ${fld('السبب',`<textarea class="inp" name="reason">${esc(l.reason||'')}</textarea>`,1)}
+  </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.memberId){toast('اختر العضو',true);return false}if(o.to&&o.to<o.from){toast('تاريخ النهاية قبل البداية',true);return false}put('leaves',id||uid(),{...(id?S.leaves[id]:{createdAt:Date.now()}),...o});toast('تم الحفظ ✓')});
+}
+
+/* ---- profile ---- */
+let pTab='works',pId=null;
+function openProfile(id){pId=id;pTab='timeline';drawProfile()}
+function drawProfile(){
+  const m=S.members[pId];if(!m){closeModal();return}
+  const s=statsFor(pId);const [f0,f1]=periodRange('month');const sm=statsFor(pId,f0,f1);
+  const st=isOnLeave(pId)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
+  const allW=s.works.sort((a,b)=>b.date.localeCompare(a.date));
+  const allX=arr('warnings').filter(w=>w.memberId===pId).sort((a,b)=>b.date.localeCompare(a.date));
+  const allL=s.leaves.sort((a,b)=>b.from.localeCompare(a.from));
+  const tl=[...allW.map(w=>({d:w.date,c:w.status==='rejected'?'red':'',h:`<b>${esc(w.type)}</b> — ${esc(w.title||'')} ${chip(WSTAT[w.status])}`,s:`${w.status==='approved'?'+'+w.points+' نقطة':''}${w.location?' · '+esc(w.location):''}`})),
+    ...allX.map(w=>({d:w.date,c:'red',h:`${chip(WLEVEL[w.level])} ${esc(w.reason)}`,s:`صادر من ${esc(w.issuedBy||'—')}${w.status==='cancelled'?' · ملغى':''}`})),
+    ...allL.map(l=>({d:l.from,c:'blue',h:`${chip(LTYPE[l.type])} ${fmtD(l.from)}${l.to&&l.to!==l.from?' ← '+fmtD(l.to):''}`,s:esc(l.reason||'')})),
+    ...(m.joined?[{d:m.joined,c:'green',h:'<b>انضم إلى فريق الرقابة والتفتيش</b>',s:esc(m.rank||'')}]:[])].sort((a,b)=>b.d.localeCompare(a.d));
+  const tabs=[['timeline','السجل الزمني'],['works',`الأعمال (${allW.length})`],['warnings',`الإنذارات (${allX.length})`],['leaves',`الإجازات (${allL.length})`]];
+  let body='';
+  if(pTab==='timeline')body=tl.length?`<div class="timeline">${tl.map(x=>`<div class="tl ${x.c}"><div class="dim" style="font-size:12px">${fmtD(x.d)}</div><div>${x.h}</div>${x.s?`<div class="dim" style="font-size:12.5px">${x.s}</div>`:''}</div>`).join('')}</div>`:'<div class="empty">لا يوجد سجل بعد</div>';
+  if(pTab==='works')body=allW.length?`<div class="list">${allW.map(w=>`<div class="li"><div class="grow"><div class="t">${esc(w.title||w.type)}</div><div class="d">${esc(w.type)} · ${fmtD(w.date)}</div></div>${chip(WSTAT[w.status])}<span class="score">${w.points}</span><button type="button" class="icon-btn" onclick="viewWork('${w.id}')">${ic('eye')}</button></div>`).join('')}</div>`:'<div class="empty">لا توجد أعمال</div>';
+  if(pTab==='warnings')body=allX.length?`<div class="list">${allX.map(w=>`<div class="li"><div class="grow"><div class="t">${esc(w.reason)}</div><div class="d">${fmtD(w.date)} · ينتهي: ${w.expires?fmtD(w.expires):'دائم'} · ${esc(w.issuedBy||'')}</div></div>${chip(WLEVEL[w.level])}${chip(warnActive(w)?WARNST.active:w.status==='cancelled'?WARNST.cancelled:WARNST.expired)}</div>`).join('')}</div>`:'<div class="empty">سجل نظيف — لا توجد إنذارات</div>';
+  if(pTab==='leaves')body=allL.length?`<div class="list">${allL.map(l=>`<div class="li"><div class="grow"><div class="t">${fmtD(l.from)} ← ${fmtD(l.to||l.from)} <span class="dim">(${daysBetween(l.from,l.to||l.from)+1} يوم)</span></div><div class="d">${esc(l.reason||'')}</div></div>${chip(LTYPE[l.type])}${chip(LSTAT[l.status])}</div>`).join('')}</div>`:'<div class="empty">لا توجد إجازات</div>';
+  openModal('ملف العضو',`
+   <div class="prof-head"><div class="av lg">${esc(initials(m.name))}</div><div style="flex:1;min-width:200px"><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'—','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}${m.discordId?`<span class="dim" style="direction:ltr">${esc(m.discordId)}</span>`:''}</div><div class="dim mt" style="font-size:13px;margin-top:6px">انضم: ${fmtD(m.joined)} · آخر عمل: ${s.lastWork?fmtD(s.lastWork):'لا يوجد'}</div></div>
+   <div class="flex w-only"><button type="button" class="btn sm gold" onclick="formWork(null,'${pId}')">${ic('plus',2.4)} عمل</button><button type="button" class="btn sm red" onclick="formWarning('${pId}')">${ic('warn')} إنذار</button><button type="button" class="btn sm" onclick="formLeave('${pId}')">${ic('leave')} إجازة</button><button type="button" class="btn sm" onclick="formMember('${pId}')">${ic('edit')}</button></div></div>
+   ${m.notes?`<div class="alert amber" style="margin-bottom:14px">${ic('info')}<div>${esc(m.notes)}</div></div>`:''}
+   <div class="mini-stats"><div class="mini"><b>${s.score}</b><span>مجموع النقاط</span></div><div class="mini"><b>${sm.score}</b><span>نقاط هذا الشهر</span></div><div class="mini"><b>${s.appr.length}</b><span>أعمال معتمدة</span></div><div class="mini"><b style="color:${s.activeW.length?'#ff9a92':''}">${s.activeW.length}</b><span>إنذارات فعّالة</span></div><div class="mini"><b>${s.leaves.length}</b><span>إجازات/غياب</span></div></div>
+   <div class="tabs">${tabs.map(([k,t])=>`<button type="button" class="${pTab===k?'on':''}" onclick="pTab='${k}';drawProfile()">${t}</button>`).join('')}</div>
+   ${body}`,null,'',true);
+}
+
+/* ============ init ============ */
+$('#today').textContent=new Date().toLocaleDateString('ar-u-nu-latn',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+route();boot();
+</script>
+</body>
+</html>
