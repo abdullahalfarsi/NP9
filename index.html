@@ -257,6 +257,12 @@ body.ro .w-only{display:none!important}
 .pend-ic{width:70px;height:70px;margin:18px auto 0;border-radius:50%;display:grid;place-items:center;background:#d4a24c18;color:var(--gold)}
 .pend-ic svg{width:36px;height:36px}
 body.insp .a-only{display:none!important}
+.av{position:relative;overflow:hidden}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.login .btn.discord{background:#5865F2;border-color:#5865F2;color:#fff;font-size:15.5px;margin-top:22px}
+.login .btn.discord:hover{background:#4752c4}
+.dc-card{display:flex;align-items:center;gap:12px;background:#0e0905;border:1px solid var(--line2);border-radius:14px;padding:10px 14px;margin-top:16px;text-align:right}
+.dc-card b{display:block}.dc-card small{color:var(--dim);display:block}
 #meBox{padding:4px 0}
 #meBox .av{width:32px;height:32px;font-size:13px}
 #meBox b{font-size:13.5px;color:var(--text)}
@@ -354,7 +360,7 @@ const SUPABASE_URL='https://xzrdcqrkmjmcyhwovdgf.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6cmRjcXJrbWptY3lod292ZGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2NjE2MjcsImV4cCI6MjExMDIzNzYyN30.pOlcB9bOlvaNGDZZyAfPi13_t8WIpmEp8De7LK4WMg0';  
 const S={members:{},works:{},warnings:{},leaves:{},cfg:structuredClone(DEFAULT_CFG),board:null,boardKey:''};
 let SB=null,MODE='loading',READONLY=false,RT=null,pendTimer=null;
-let ME={role:'admin',memberId:null,userId:null,email:''};
+let ME={role:'admin',memberId:null,userId:null,email:'',meta:{}};
 const isAdmin=()=>ME.role==='admin';
 const LSK='np9-rqaba-v1';
 function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LSK)||'null');if(d){COLS.forEach(c=>S[c]=d[c]||{});if(d.cfg)S.cfg={...DEFAULT_CFG,...d.cfg};}}catch(e){}}
@@ -409,54 +415,38 @@ async function loadBoard(){
   boardBusy=false;if(!error){S.board=data||[];S.boardKey=key;render()}
 }
 
-/* ---------- بوابة الدخول ---------- */
-let gateEmail='',resendT=0,resendTimer=null;
+/* ---------- بوابة الدخول (ديسكورد) ---------- */
 function gate(html){$('#gate').innerHTML=html;$('#login').classList.add('show')}
 function hideGate(){$('#login').classList.remove('show')}
 const gateHead=sub=>`<img src="${LOGO}" alt="NP9"><h1>NP9 | مود الشرطة</h1><div class="muted">${sub}</div>`;
 const gateOut=`<div class="glinks"><button type="button" class="lnk" onclick="doLogout()">تسجيل الخروج</button></div>`;
-function gateEmailStep(){
-  gate(`<form onsubmit="sendCode(event)">${gateHead('نظام إدارة الرقابة والتفتيش')}
-   <p class="gtxt">اكتب إيميلك وبيوصلك رمز تأكيد للدخول</p>
-   <input class="inp" name="email" type="email" required placeholder="example@gmail.com" style="direction:ltr;text-align:left" value="${esc(gateEmail)}">
-   <button class="btn gold" type="submit">إرسال رمز التأكيد</button><div class="gerr" id="gerr"></div></form>`);
-  setTimeout(()=>$('#gate input')?.focus(),50);
+function oauthError(){
+  const q=new URLSearchParams(location.search+'&'+location.hash.replace(/^#/,''));
+  const d=q.get('error_description')||q.get('error');
+  return d?decodeURIComponent(d.replace(/\+/g,' ')):'';
 }
-function otpErr(e){const m=(e.message||'').toLowerCase();
-  if(e.status===429||m.includes('rate')||m.includes('seconds'))return 'طلبت رمز قبل قليل، انتظر شوي وحاول مرة ثانية';
-  if(m.includes('not authorized')||m.includes('address not'))return 'تعذّر الإرسال لهذا الإيميل — لازم إعداد SMTP في Supabase';
-  if(m.includes('signups not allowed')||m.includes('signup'))return 'التسجيل مقفل حالياً من الإدارة';
-  if(m.includes('invalid'))return 'الإيميل غير صحيح';
-  return 'تعذّر إرسال الرمز: '+e.message}
-async function sendCode(e){
-  e.preventDefault();const f=e.target,b=f.querySelector('button');gateEmail=f.email.value.trim().toLowerCase();
-  b.disabled=true;b.textContent='جاري الإرسال…';$('#gerr').textContent='';
-  const {error}=await SB.auth.signInWithOtp({email:gateEmail,options:{shouldCreateUser:true}});
-  if(error){b.disabled=false;b.textContent='إرسال رمز التأكيد';$('#gerr').textContent=otpErr(error);return}
-  gateCodeStep();
+function gateLoginStep(err){
+  gate(`${gateHead('نظام إدارة الرقابة والتفتيش')}
+   <p class="gtxt">سجّل دخولك بحساب الديسكورد اللي تستخدمه في السيرفر</p>
+   <button class="btn discord" type="button" id="dcBtn" onclick="loginDiscord()">${ic('user',2.2)} تسجيل الدخول بالديسكورد</button>
+   <div class="gerr" id="gerr">${err?'تعذّر الدخول: '+esc(err):''}</div>
+   <p class="dim" style="font-size:12px;margin-top:6px">بعد الدخول تكمل بياناتك وتنتظر موافقة مسؤول الرقابة والتفتيش.</p>`);
 }
-function gateCodeStep(){
-  gate(`<form onsubmit="verifyCode(event)">${gateHead('تأكيد الإيميل')}
-   <p class="gtxt">أرسلنا رمز التأكيد إلى<br><b style="direction:ltr;display:inline-block;color:var(--gold2)">${esc(gateEmail)}</b><br><small class="dim">تأكد من مجلد الرسائل غير المرغوب (Spam)</small></p>
-   <input class="inp code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required placeholder="------">
-   <button class="btn gold" type="submit">تأكيد ودخول</button><div class="gerr" id="gerr"></div>
-   <div class="glinks"><button type="button" class="lnk" id="resendBtn" onclick="resendCode()"></button><button type="button" class="lnk" onclick="gateEmailStep()">تغيير الإيميل</button></div></form>`);
-  startResend();setTimeout(()=>$('#gate .code')?.focus(),50);
+async function loginDiscord(){
+  const b=$('#dcBtn');b.disabled=true;b.textContent='جاري التحويل للديسكورد…';
+  const {error}=await SB.auth.signInWithOAuth({provider:'discord',options:{redirectTo:location.origin+location.pathname}});
+  if(error){b.disabled=false;b.textContent='تسجيل الدخول بالديسكورد';$('#gerr').textContent='تعذّر الدخول: '+error.message}
 }
-function startResend(){resendT=60;clearInterval(resendTimer);const tick=()=>{const b=$('#resendBtn');if(!b){clearInterval(resendTimer);return}
-  b.disabled=resendT>0;b.textContent=resendT>0?`إعادة الإرسال بعد ${resendT} ث`:'إعادة إرسال الرمز';if(resendT<=0)clearInterval(resendTimer);resendT--};tick();resendTimer=setInterval(tick,1000)}
-async function resendCode(){const {error}=await SB.auth.signInWithOtp({email:gateEmail,options:{shouldCreateUser:true}});
-  if(error){$('#gerr').textContent=otpErr(error);return}toast('تم إرسال رمز جديد');startResend()}
-async function verifyCode(e){
-  e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');const token=f.code.value.replace(/\D/g,'');
-  if(token.length<6){$('#gerr').textContent='اكتب الرمز كامل';return}
-  b.disabled=true;b.textContent='جاري التحقق…';$('#gerr').textContent='';
-  const {data,error}=await SB.auth.verifyOtp({email:gateEmail,token,type:'email'});
-  if(error||!data.session){b.disabled=false;b.textContent='تأكيد ودخول';$('#gerr').textContent=/rate|seconds/i.test(error?.message||'')?'محاولات كثيرة، انتظر شوي وحاول':'الرمز غير صحيح أو انتهت صلاحيته — تأكد منه أو اطلب رمز جديد';return}
-  afterAuth(data.session);
+function dcMeta(){
+  const md=ME.meta||{};
+  const user=String(md.name||md.full_name||md.user_name||'').replace(/#0+$/,'');
+  return {user,display:md.custom_claims?.global_name||md.full_name||user,id:md.provider_id||md.sub||'',avatar:md.avatar_url||md.picture||''};
 }
+let authStarted=false;
 async function afterAuth(session){
-  ME.userId=session.user.id;ME.email=session.user.email||'';
+  if(authStarted)return;authStarted=true;
+  ME.userId=session.user.id;ME.email=session.user.email||'';ME.meta=session.user.user_metadata||{};
+  if(/access_token|code=|error/.test(location.hash+location.search))history.replaceState(null,'',location.pathname);
   setConn('cloud','جاري التحميل…');await loadCfg();await resolveMe();
 }
 async function resolveMe(){
@@ -469,23 +459,23 @@ async function resolveMe(){
   clearInterval(pendTimer);hideGate();enterApp();
 }
 function gateProfileStep(){
-  const ranks=S.cfg.ranks;
+  const ranks=S.cfg.ranks,d=dcMeta();
   gate(`<form onsubmit="saveProfile(event)" class="wide">${gateHead('أكمل بياناتك الرقابية')}
-   <p class="gtxt">تم تأكيد إيميلك ✓ — سجّل بياناتك عشان ينضاف ملفك لفريق الرقابة والتفتيش</p>
+   <div class="dc-card">${avHTML({name:d.display,avatarUrl:d.avatar})}<div><b>${esc(d.display)}</b><small style="direction:ltr">@${esc(d.user)}</small></div><span class="chip c-green right">تم الدخول ✓</span></div>
+   <p class="gtxt" style="margin-top:12px">سجّل بياناتك عشان ينضاف ملفك لفريق الرقابة والتفتيش</p>
    <div class="gform">
-    <label>الاسم في السيرفر <i>*</i><input class="inp" name="name" required placeholder="اسمك في الرول بلاي"></label>
-    <label>يوزر / آيدي ديسكورد <i>*</i><input class="inp" name="discordId" required placeholder="username أو ID" style="direction:ltr;text-align:right"></label>
+    <label>الاسم في السيرفر <i>*</i><input class="inp" name="name" required placeholder="اسمك في الرول بلاي" value="${esc(d.display)}"></label>
     <label>الرقم الوظيفي<input class="inp" name="badge" placeholder="إن وجد"></label>
-    <label>الرتبة الحالية<select class="inp" name="rank">${ranks.map((r,i)=>`<option ${i===ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
+    <label class="full">الرتبة الحالية<select class="inp" name="rank">${ranks.map((r,i)=>`<option ${i===ranks.length-1?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
     <label class="full">نبذة / ملاحظات<textarea class="inp" name="notes" placeholder="خبرتك، أوقات تواجدك…"></textarea></label>
    </div>
    <button class="btn gold" type="submit">حفظ وإرسال</button><div class="gerr" id="gerr"></div>
-   <div class="glinks"><span class="dim" style="direction:ltr">${esc(ME.email)}</span><button type="button" class="lnk" onclick="doLogout()">تسجيل الخروج</button></div></form>`);
+   ${gateOut}</form>`);
 }
 async function saveProfile(e){
   e.preventDefault();const f=e.target,b=f.querySelector('button[type=submit]');const o=Object.fromEntries(new FormData(f));
-  if(!o.name.trim()||!o.discordId.trim())return;b.disabled=true;b.textContent='جاري الحفظ…';
-  const row=toRow(uid(),{...o,name:o.name.trim(),discordId:o.discordId.trim(),joined:today(),createdAt:Date.now()});
+  if(!o.name.trim())return;b.disabled=true;b.textContent='جاري الحفظ…';const d=dcMeta();
+  const row=toRow(uid(),{...o,name:o.name.trim(),discordId:d.id,discordUser:d.user,avatarUrl:d.avatar,joined:today(),createdAt:Date.now()});
   const {error}=await SB.from('members').insert(row);
   if(error){b.disabled=false;b.textContent='حفظ وإرسال';$('#gerr').textContent='تعذّر الحفظ: '+error.message;return}
   resolveMe();
@@ -501,7 +491,7 @@ let appStarted=false;
 function enterApp(){
   document.body.classList.toggle('insp',!isAdmin());
   const m=S.members[ME.memberId]||{};
-  $('#meBox').innerHTML=`<div class="person"><div class="av">${esc(initials(m.name))}</div><div style="min-width:0"><b>${esc(m.name||'')}</b><small>${isAdmin()?'مسؤول النظام':esc(m.rank||'مفتش')}</small></div></div>`;
+  $('#meBox').innerHTML=`<div class="person">${avHTML(m)}<div style="min-width:0"><b>${esc(m.name||'')}</b><small>${isAdmin()?'مسؤول النظام':esc(m.rank||'مفتش')}</small></div></div>`;
   setConn('cloud');
   if(!isAdmin()&&!['me','works','warnings','leaves','ranking','profile'].includes(page))location.hash='me';
   route();
@@ -517,8 +507,9 @@ async function boot(){
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){lsLoad();ME.role='admin';setConn('local');render();return}
   SB=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   setConn('loading','بانتظار تسجيل الدخول');
+  SB.auth.onAuthStateChange((ev,session)=>{if(session&&ev==='SIGNED_IN')afterAuth(session)});
   const {data:{session}}=await SB.auth.getSession();
-  if(session)afterAuth(session);else gateEmailStep();
+  if(session)afterAuth(session);else gateLoginStep(oauthError());
 }
 async function doLogout(){if(SB){await SB.auth.signOut();location.hash='';location.reload()}}
 
@@ -539,8 +530,9 @@ const arr=c=>Object.entries(S[c]).map(([id,v])=>({id,...v}));
 const team=()=>arr('members').filter(m=>m.status!=='pending');
 const mem=id=>S.members[id];
 const mName=id=>mem(id)?.name||'عضو محذوف';
+function avHTML(m,cls='',style=''){return `<div class="av ${cls}" style="${style}">${m&&m.avatarUrl?`<img src="${esc(m.avatarUrl)}" alt="" onerror="this.remove()">`:''}<span>${esc(initials(m?.name))}</span></div>`}
 function person(id,sub){return personM(mem(id),sub)}
-function personM(m,sub){return `<div class="person"><div class="av">${esc(initials(m?.name))}</div><div style="min-width:0"><b>${esc(m?.name||'عضو محذوف')}</b><small>${esc(sub??(m?.rank||''))}</small></div></div>`}
+function personM(m,sub){return `<div class="person">${avHTML(m)}<div style="min-width:0"><b>${esc(m?.name||'عضو محذوف')}</b><small>${esc(sub??(m?.rank||''))}</small></div></div>`}
 function toast(t,err){const e=document.createElement('div');e.className='toast'+(err?' err':'');e.textContent=t;$('#toasts').appendChild(e);setTimeout(()=>e.remove(),3200)}
 function canW(){if(READONLY){toast('وضع العرض فقط',true);return false}return true}
 const typePts=n=>(S.cfg.workTypes.find(t=>t.n===n)||{}).p??5;
@@ -661,16 +653,16 @@ function vMembers(){
   const ro=S.cfg.ranks;M.sort((a,b)=>(ro.indexOf(a.rank)+99*(ro.indexOf(a.rank)<0))-(ro.indexOf(b.rank)+99*(ro.indexOf(b.rank)<0))||String(a.name).localeCompare(b.name,'ar'));
   const [f0,f1]=periodRange('month');
   const PM=arr('members').filter(m=>m.status==='pending');
-  return `${PM.length?`<div class="card mb" style="border-color:#4a2f66"><h3>${ic('users')} طلبات الانضمام الجديدة <span class="muted">(${PM.length})</span></h3><div class="list">${PM.map(m=>`<div class="li">${personM(m,m.email||'')}<div class="grow" style="font-size:13px"><span class="dim">ديسكورد:</span> <span style="direction:ltr;display:inline-block">${esc(m.discordId||'—')}</span> · <span class="dim">الرتبة المختارة:</span> ${esc(m.rank||'—')}${m.badge?` · #${esc(m.badge)}`:''}${m.notes?`<div class="dim">${esc(m.notes)}</div>`:''}</div><button class="btn sm gold" onclick="approveMember('${m.id}')">${ic('check')} قبول</button><button class="btn sm" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="btn sm red" onclick="rejectMember('${m.id}')">رفض</button></div>`).join('')}</div></div>`:''}
+  return `${PM.length?`<div class="card mb" style="border-color:#4a2f66"><h3>${ic('users')} طلبات الانضمام الجديدة <span class="muted">(${PM.length})</span></h3><div class="list">${PM.map(m=>`<div class="li">${personM(m,m.discordUser?'@'+m.discordUser:'')}<div class="grow" style="font-size:13px"><span class="dim">آيدي:</span> <span style="direction:ltr;display:inline-block">${esc(m.discordId||'—')}</span> · <span class="dim">الرتبة المختارة:</span> ${esc(m.rank||'—')}${m.badge?` · #${esc(m.badge)}`:''}${m.notes?`<div class="dim">${esc(m.notes)}</div>`:''}</div><button class="btn sm gold" onclick="approveMember('${m.id}')">${ic('check')} قبول</button><button class="btn sm" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="btn sm red" onclick="rejectMember('${m.id}')">رفض</button></div>`).join('')}</div></div>`:''}
   <div class="bar">
     <div class="search">${ic('search')}<input id="mq" class="inp" placeholder="بحث بالاسم، الآيدي، الرقم الوظيفي…" value="${esc(F.mq)}" oninput="setF('mq',this.value)"></div>
     <select class="inp" onchange="setF('mstat',this.value)"><option value="all">كل الحالات</option>${Object.entries(STATUS).map(([k,[t]])=>`<option value="${k}" ${F.mstat===k?'selected':''}>${t}</option>`).join('')}</select>
     <select class="inp" onchange="setF('mrank',this.value)"><option value="all">كل الرتب</option>${S.cfg.ranks.map(r=>`<option ${F.mrank===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
     <button class="btn gold right w-only" onclick="formMember()">${ic('plus',2.4)} إضافة عضو</button>
   </div>
-  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>آيدي ديسكورد</th><th>الحساب</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
+  ${M.length?`<div class="tbl-wrap"><table><thead><tr><th>العضو</th><th>الرقم الوظيفي</th><th>الديسكورد</th><th>الحساب</th><th>الحالة</th><th>أعمال (30 يوم)</th><th>إنذارات فعّالة</th><th>آخر عمل</th><th>النقاط</th><th></th></tr></thead><tbody>
   ${M.map(m=>{const s=statsFor(m.id,f0,f1);const st=isOnLeave(m.id)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
-   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${esc(m.discordId||'—')}</td><td>${m.role==='admin'?chip(['مسؤول','c-gold']):m.userId?`<span class="dim" style="font-size:12.5px;direction:ltr;display:inline-block">${esc(m.email||'مرتبط')}</span>`:'<span class="dim">بدون حساب</span>'}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
+   return `<tr class="clickable" onclick="openProfile('${m.id}')"><td>${person(m.id)}</td><td>${esc(m.badge||'—')}</td><td class="dim" style="direction:ltr;text-align:right">${m.discordUser?'@'+esc(m.discordUser):esc(m.discordId||'—')}</td><td>${m.role==='admin'?chip(['مسؤول','c-gold']):m.userId?chip(['مرتبط بالديسكورد','c-blue']):'<span class="dim">بدون حساب</span>'}</td><td>${chip(st)}</td><td><b>${s.appr.length}</b></td><td>${s.activeW.length?chip([s.activeW.length,s.activeW.length>=S.cfg.maxWarnings?'c-red':'c-amber']):'<span class="dim">0</span>'}</td><td class="dim">${s.lastWork?fmtD(s.lastWork):'—'}</td><td class="score">${s.score}</td>
    <td class="actions" onclick="event.stopPropagation()"><button class="icon-btn" title="الملف" onclick="openProfile('${m.id}')">${ic('eye')}</button><button class="icon-btn w-only" title="تعديل" onclick="formMember('${m.id}')">${ic('edit')}</button><button class="icon-btn del w-only" title="حذف" onclick="askDel('members','${m.id}','العضو ${esc(m.name)}')">${ic('trash')}</button></td></tr>`}).join('')}
   </tbody></table></div>`:emptyBox('لا يوجد أعضاء','أضف أعضاء فريق الرقابة والتفتيش لبدء المتابعة.','formMember()','إضافة عضو')}`;
 }
@@ -756,14 +748,14 @@ function vRanking(){
   const [f0,f1]=periodRange(F.kp);let R;
   if(!isAdmin()&&MODE==='cloud'){
     if(S.boardKey!==F.kp)loadBoard();
-    R=(S.board||[]).map(b=>({m:{id:b.member_id,name:b.member_name,rank:b.member_rank},s:{score:b.score,appr:{length:b.works_count},pts:b.points,pen:b.penalty,warns:{length:b.warnings_count},absent:b.absences}}));
+    R=(S.board||[]).map(b=>({m:{id:b.member_id,name:b.member_name,rank:b.member_rank,avatarUrl:b.avatar_url},s:{score:b.score,appr:{length:b.works_count},pts:b.points,pen:b.penalty,warns:{length:b.warnings_count},absent:b.absences}}));
     if(!S.board)return '<div class="card empty">جاري تحميل الترتيب…</div>';
   }else R=team().filter(m=>m.status!=='dismissed').map(m=>({m,s:statsFor(m.id,f0,f1)})).sort((a,b)=>b.s.score-a.s.score||b.s.appr.length-a.s.appr.length);
   if(!R.length)return emptyBox('لا يوجد أعضاء للترتيب','',isAdmin()?'formMember()':'','إضافة عضو');
   const can=id=>isAdmin()||id===ME.memberId;const oc=id=>can(id)?`onclick="openProfile('${id}')"`:'';
   const p=R.slice(0,3);const podOrder=[p[1],p[0],p[2]];const cls=['p2','p1','p3'];const lbl=['المركز الثاني','المركز الأول','المركز الثالث'];
   return `<div class="bar">${segP('kp')}<span class="muted right" style="font-size:13px">النقاط = نقاط الأعمال المعتمدة − خصم الإنذارات − 5 لكل غياب بدون عذر</span></div>
-  <div class="podium">${podOrder.map((x,i)=>x?`<div class="pod ${cls[i]} ${can(x.m.id)?'clickable':''}" ${oc(x.m.id)}><span class="medal">${lbl[i]}</span><div class="av ${i===1?'lg':''}" style="${i!==1?'width:56px;height:56px;font-size:20px':''}">${esc(initials(x.m.name))}</div><div style="font-weight:800;font-family:Cairo">${esc(x.m.name)}${x.m.id===ME.memberId?' <span class="chip c-gold">أنت</span>':''}</div><div class="dim" style="font-size:12.5px">${esc(x.m.rank||'')}</div><div class="sc">${x.s.score}</div><div class="dim" style="font-size:12.5px">${x.s.appr.length} عمل معتمد</div></div>`:'<div></div>').join('')}</div>
+  <div class="podium">${podOrder.map((x,i)=>x?`<div class="pod ${cls[i]} ${can(x.m.id)?'clickable':''}" ${oc(x.m.id)}><span class="medal">${lbl[i]}</span>${avHTML(x.m,i===1?'lg':'',i!==1?'width:56px;height:56px;font-size:20px;margin:0 auto 10px':'margin:0 auto 10px')}<div style="font-weight:800;font-family:Cairo">${esc(x.m.name)}${x.m.id===ME.memberId?' <span class="chip c-gold">أنت</span>':''}</div><div class="dim" style="font-size:12.5px">${esc(x.m.rank||'')}</div><div class="sc">${x.s.score}</div><div class="dim" style="font-size:12.5px">${x.s.appr.length} عمل معتمد</div></div>`:'<div></div>').join('')}</div>
   <div class="tbl-wrap"><table><thead><tr><th>#</th><th>العضو</th><th>أعمال معتمدة</th><th>نقاط الأعمال</th><th>الإنذارات</th><th>خصم</th><th>غياب بدون عذر</th><th>المجموع</th></tr></thead><tbody>
   ${R.map((x,i)=>`<tr class="${can(x.m.id)?'clickable':''}" ${oc(x.m.id)} style="${x.m.id===ME.memberId&&!isAdmin()?'background:#d4a24c14':''}"><td class="rank-n" style="${i<3?'color:var(--gold2)':''}">${i+1}</td><td>${personM(x.m)}</td><td>${x.s.appr.length}</td><td style="color:var(--green)">+${x.s.pts}</td><td>${x.s.warns.length}</td><td style="color:var(--red)">${x.s.pen?'-'+x.s.pen:'0'}</td><td>${x.s.absent}</td><td class="score" style="font-size:17px">${x.s.score}</td></tr>`).join('')}
   </tbody></table></div>`;
@@ -778,7 +770,7 @@ function vMe(){
   const pend=s.works.filter(w=>w.status==='pending').length;
   const W=[...s.works].sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0)).slice(0,6);
   const aw=s.activeW;const st=isOnLeave(ME.memberId)&&m.status==='active'?STATUS.leave:STATUS[m.status]||STATUS.active;
-  return `<div class="card mb"><div class="prof-head" style="margin:0"><div class="av lg">${esc(initials(m.name))}</div><div style="flex:1;min-width:200px"><div class="muted" style="font-size:13px">أهلاً بك 👋</div><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'مفتش','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}</div></div>
+  return `<div class="card mb"><div class="prof-head" style="margin:0">${avHTML(m,'lg')}<div style="flex:1;min-width:200px"><div class="muted" style="font-size:13px">أهلاً بك 👋</div><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'مفتش','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}</div></div>
    <div class="flex"><button class="btn gold" onclick="formWork()">${ic('plus',2.4)} تسجيل عمل</button><button class="btn" onclick="formLeave()">${ic('leave')} طلب إجازة</button></div></div></div>
   ${m.status==='suspended'?`<div class="alert amber">${ic('warn')}<div>حسابك <b>موقوف مؤقتاً</b> — تواصل مع مسؤول الرقابة والتفتيش.</div></div>`:''}
   ${aw.length?`<div class="alert red">${ic('warn')}<div>عليك <b>${aw.length}</b> ${aw.length===1?'إنذار فعّال':'إنذارات فعّالة'}. <a href="#warnings">التفاصيل</a></div></div>`:''}
@@ -797,10 +789,10 @@ function vMe(){
 }
 function vProfile(){
   const m=S.members[ME.memberId];if(!m)return '';
-  return `<div class="card" style="max-width:720px"><div class="prof-head"><div class="av lg">${esc(initials(m.name))}</div><div><h2>${esc(m.name)}</h2><div class="dim" style="direction:ltr;text-align:right">${esc(ME.email)}</div></div></div>
+  return `<div class="card" style="max-width:720px"><div class="prof-head">${avHTML(m,'lg')}<div><h2>${esc(m.name)}</h2><div class="dim" style="direction:ltr;text-align:right">@${esc(m.discordUser||dcMeta().user)}</div></div></div>
   <form onsubmit="saveMyProfile(event)"><div class="form">
    ${fld('الاسم في السيرفر',`<input class="inp" name="name" required value="${esc(m.name||'')}">`,0,1)}
-   ${fld('يوزر / آيدي ديسكورد',`<input class="inp" name="discordId" required value="${esc(m.discordId||'')}" style="direction:ltr;text-align:right">`,0,1)}
+   ${fld('حساب الديسكورد',`<input class="inp" value="@${esc(m.discordUser||'')}" disabled style="direction:ltr;text-align:right">`)}
    ${fld('الرتبة',`<input class="inp" value="${esc(m.rank||'—')}" disabled>`)}
    ${fld('الرقم الوظيفي',`<input class="inp" value="${esc(m.badge||'—')}" disabled>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" value="${fmtD(m.joined)}" disabled>`)}
@@ -809,7 +801,7 @@ function vProfile(){
   <div class="flex mt"><button class="btn gold" type="submit">${ic('check')} حفظ التعديلات</button><button class="btn" type="button" onclick="doLogout()">تسجيل الخروج</button></div></form></div>`;
 }
 function saveMyProfile(e){e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const m=S.members[ME.memberId];
-  put('members',ME.memberId,{...m,name:o.name.trim(),discordId:o.discordId.trim()});toast('تم حفظ بياناتك ✓')}
+  put('members',ME.memberId,{...m,name:o.name.trim()});toast('تم حفظ بياناتك ✓')}
 function approveMember(id){put('members',id,{...S.members[id],status:'active',joined:S.members[id].joined||today()});toast('تم قبول العضو ✓')}
 function rejectMember(id){openModal('رفض طلب الانضمام',`<p>رفض طلب <b>${esc(S.members[id].name)}</b>؟ ما راح يقدر يدخل النظام.</p>`,()=>{put('members',id,{...S.members[id],status:'dismissed'});toast('تم رفض الطلب')},'رفض الطلب')}
 
@@ -919,7 +911,7 @@ function formMember(id){
    ${fld('الحالة',`<select class="inp" name="status">${opts(STATUS,m.status)}</select>`)}
    ${fld('تاريخ الانضمام',`<input class="inp" type="date" name="joined" value="${m.joined||''}">`)}
    ${fld('الصلاحية',`<select class="inp" name="role"><option value="inspector">مفتش</option><option value="admin" ${m.role==='admin'?'selected':''}>مسؤول (صلاحيات كاملة)</option></select>`)}
-   ${fld('الإيميل',`<input class="inp" value="${esc(m.email||'لم يسجّل دخول بعد')}" disabled style="direction:ltr;text-align:right">`)}
+   ${fld('حساب الديسكورد',`<input class="inp" value="${m.userId?'@'+esc(m.discordUser||''):'لم يسجّل دخول بعد'}" disabled style="direction:ltr;text-align:right">`)}
    ${fld('ملاحظات',`<textarea class="inp" name="notes">${esc(m.notes||'')}</textarea>`,1)}
   </div>`,fd=>{const o=Object.fromEntries(fd);if(!o.name.trim())return false;if(id===ME.memberId&&o.role!=='admin'&&MODE==='cloud'){toast('ما تقدر تشيل صلاحية المسؤول عن نفسك',true);return false}const nid=id||uid();put('members',nid,{...(id?S.members[id]:{createdAt:Date.now()}),...o,name:o.name.trim()});toast(id?'تم تحديث البيانات':'تمت إضافة العضو ✓')});
 }
@@ -990,7 +982,7 @@ function drawProfile(){
   if(pTab==='warnings')body=allX.length?`<div class="list">${allX.map(w=>`<div class="li"><div class="grow"><div class="t">${esc(w.reason)}</div><div class="d">${fmtD(w.date)} · ينتهي: ${w.expires?fmtD(w.expires):'دائم'} · ${esc(w.issuedBy||'')}</div></div>${chip(WLEVEL[w.level])}${chip(warnActive(w)?WARNST.active:w.status==='cancelled'?WARNST.cancelled:WARNST.expired)}</div>`).join('')}</div>`:'<div class="empty">سجل نظيف — لا توجد إنذارات</div>';
   if(pTab==='leaves')body=allL.length?`<div class="list">${allL.map(l=>`<div class="li"><div class="grow"><div class="t">${fmtD(l.from)} ← ${fmtD(l.to||l.from)} <span class="dim">(${daysBetween(l.from,l.to||l.from)+1} يوم)</span></div><div class="d">${esc(l.reason||'')}</div></div>${chip(LTYPE[l.type])}${chip(LSTAT[l.status])}</div>`).join('')}</div>`:'<div class="empty">لا توجد إجازات</div>';
   openModal('ملف العضو',`
-   <div class="prof-head"><div class="av lg">${esc(initials(m.name))}</div><div style="flex:1;min-width:200px"><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'—','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}${m.discordId?`<span class="dim" style="direction:ltr">${esc(m.discordId)}</span>`:''}</div><div class="dim mt" style="font-size:13px;margin-top:6px">انضم: ${fmtD(m.joined)} · آخر عمل: ${s.lastWork?fmtD(s.lastWork):'لا يوجد'}</div></div>
+   <div class="prof-head">${avHTML(m,'lg')}<div style="flex:1;min-width:200px"><h2>${esc(m.name)}</h2><div class="flex">${chip([m.rank||'—','c-gold'])}${chip(st)}${m.badge?`<span class="dim">#${esc(m.badge)}</span>`:''}${m.discordId?`<span class="dim" style="direction:ltr">${esc(m.discordId)}</span>`:''}</div><div class="dim mt" style="font-size:13px;margin-top:6px">انضم: ${fmtD(m.joined)} · آخر عمل: ${s.lastWork?fmtD(s.lastWork):'لا يوجد'}</div></div>
    <div class="flex w-only"><button type="button" class="btn sm gold" onclick="${isAdmin()||pId===ME.memberId?`formWork(null,'${pId}')`:''}">${ic('plus',2.4)} عمل</button><button type="button" class="btn sm red a-only" onclick="formWarning('${pId}')">${ic('warn')} إنذار</button><button type="button" class="btn sm" onclick="formLeave('${pId}')">${ic('leave')} إجازة</button><button type="button" class="btn sm a-only" onclick="formMember('${pId}')">${ic('edit')}</button></div></div>
    ${m.notes?`<div class="alert amber" style="margin-bottom:14px">${ic('info')}<div>${esc(m.notes)}</div></div>`:''}
    <div class="mini-stats"><div class="mini"><b>${s.score}</b><span>مجموع النقاط</span></div><div class="mini"><b>${sm.score}</b><span>نقاط هذا الشهر</span></div><div class="mini"><b>${s.appr.length}</b><span>أعمال معتمدة</span></div><div class="mini"><b style="color:${s.activeW.length?'#ff9a92':''}">${s.activeW.length}</b><span>إنذارات فعّالة</span></div><div class="mini"><b>${s.leaves.length}</b><span>إجازات/غياب</span></div></div>
